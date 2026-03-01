@@ -10,5 +10,6 @@ struct AbuseOfNotationPlugin: CompilerPlugin {
         GoldenRatioProofMacro.self,
         Sqrt2ConvergenceProofMacro.self,
         MulCommProofMacro.self,
+        WallisProductProofMacro.self,
     ]
 }

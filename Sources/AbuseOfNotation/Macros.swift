@@ -15,3 +15,6 @@ public macro Sqrt2ConvergenceProof(depth n: Int) = #externalMacro(module: "Abuse
 
 @attached(member, names: arbitrary)
 public macro MulCommProof(leftOperand: Int, depth: Int) = #externalMacro(module: "AbuseOfNotationMacros", type: "MulCommProofMacro")
+
+@attached(member, names: arbitrary)
+public macro WallisProductProof(depth n: Int) = #externalMacro(module: "AbuseOfNotationMacros", type: "WallisProductProofMacro")
