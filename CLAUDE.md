@@ -12,12 +12,12 @@ Sources/
     Witnesses.swift                          -- witness protocols and constructors (NaturalSum, NaturalProduct, NaturalLessThan)
     TypeLevelArithmetic.swift                -- NaturalExpression, type aliases (N0-N105), Sum, Product, _TimesNk protocols
     CayleyDickson.swift                      -- Cayley-Dickson construction (Algebra marker protocol, CayleyDickson type)
-    ContinuedFractions.swift                 -- Fraction, GCFConvergent (CF convergents), LeibnizPartialSum (Leibniz series), Matrix2x2, Mat2, Sqrt2MatStep (matrix construction)
+    ContinuedFractions.swift                 -- Fraction, GCFConvergent (CF convergents), LeibnizPartialSum (Leibniz series), WallisPartialProduct (Wallis product), Matrix2x2, Mat2, Sqrt2MatStep (matrix construction)
     Fibonacci.swift                          -- FibState, FibVerified, Fib0, FibStep (Fibonacci recurrence witnesses)
     AdditionTheorems.swift                   -- universal addition theorems (AddLeftZero, SuccLeftAdd, AddCommutative, AddAssociative via ProofSeed)
     MultiplicationTheorems.swift             -- flat multiplication witnesses (TimesTick, TimesGroup), universal theorems (MulLeftZero, SuccLeftMul, MulComm)
     Streams.swift                            -- CFStream protocol, periodic irrationals (PhiCF, Sqrt2CF), unfold theorems, assertStreamEqual
-    Macros.swift                             -- macro declarations (@ProductConformance, @FibonacciProof, @PiConvergenceProof, @GoldenRatioProof, @Sqrt2ConvergenceProof, @MulCommProof)
+    Macros.swift                             -- macro declarations (@ProductConformance, @FibonacciProof, @PiConvergenceProof, @GoldenRatioProof, @Sqrt2ConvergenceProof, @MulCommProof, @WallisProductProof)
   AbuseOfNotationMacros/                     -- .macro target: compiler plugin
     Plugin.swift                             -- CompilerPlugin entry point
     ProductConformanceMacro.swift            -- @ProductConformance(n) (peer macro for inductive multiplication)
@@ -26,7 +26,8 @@ Sources/
     GoldenRatioProofMacro.swift              -- @GoldenRatioProof(depth:) (member macro generating golden ratio CF/Fibonacci proof)
     Sqrt2ConvergenceProofMacro.swift         -- @Sqrt2ConvergenceProof(depth:) (member macro generating sqrt(2) CF/matrix proof)
     MulCommProofMacro.swift                  -- @MulCommProof(leftOperand:depth:) (member macro generating paired commutativity proofs)
-    ProductChainGenerator.swift              -- shared product witness chain generator (used by Pi, GoldenRatio, Sqrt2 macros)
+    WallisProductProofMacro.swift            -- @WallisProductProof(depth:) (member macro generating Wallis product proof)
+    ProductChainGenerator.swift              -- shared product witness chain generator (used by Pi, GoldenRatio, Sqrt2, Wallis macros)
     Diagnostics.swift                        -- PeanoDiagnostic enum
   AbuseOfNotationClient/                     -- SPM executable: witness-based proofs
     main.swift                               -- witness constructions verified by compilation, type-level arithmetic assertions
@@ -39,6 +40,7 @@ Tests/
     GoldenRatioProofMacroTests.swift
     Sqrt2ConvergenceProofMacroTests.swift
     MulCommProofMacroTests.swift
+    WallisProductProofMacroTests.swift
 ```
 
 ## Building and testing
@@ -70,6 +72,7 @@ swift test                       # run macro expansion tests
 - The `@PiConvergenceProof(depth:)` macro generates the Brouncker-Leibniz correspondence proof as members, including CF convergents, Leibniz partial sums, product/sum witnesses, and type equality assertions.
 - The `@GoldenRatioProof(depth:)` macro generates the golden ratio CF / Fibonacci correspondence proof, showing that CF [1;1,1,...] convergents h_n/k_n equal F(n+2)/F(n+1).
 - The `@Sqrt2ConvergenceProof(depth:)` macro generates the sqrt(2) CF / matrix correspondence proof, showing that CF [1;2,2,...] convergents match iterated left-multiplication by [[2,1],[1,0]] via Sqrt2MatStep.
+- The `@WallisProductProof(depth:)` macro generates the Wallis product proof: unreduced partial products W_k, two-step product decomposition (multiplying by 2k twice instead of (2k)^2 once), and a factor correspondence proving (2k-1)(2k+1) + 1 = (2k)^2 at each step. Practical depth limit is 2 (products grow fast -- depth 3 exceeds macro output limits).
 - Proof-generating macros use `@attached(member, names: arbitrary)` to scope generated types inside a namespace enum (e.g., `FibProof._Fib1`, `PiProof._CF1`).
 - The macro is the proof SEARCH (arbitrary integer computation at compile time); the type checker is the proof VERIFIER (structural constraint verification).
 - Universal theorems use conditional conformance as structural induction: a base case on `Zero`/`PlusZero` and an inductive step on `AddOne`/`PlusSucc`. Protocols use plain associated types (no `where` clauses) following the `_TimesNk` pattern to avoid rewrite system limits; correctness is enforced structurally by the conformance definitions.

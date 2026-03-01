@@ -110,6 +110,24 @@ assertEqual(FibProof._Fib5.Current.self, N5.self)  // F(5) = 5
 assertEqual(FibProof._Fib6.Current.self, N8.self)  // F(6) = 8
 ```
 
+## A split dependent type system
+
+A dependent type is a type that depends on a value -- `Vec(n, A)` is the canonical example. A dependent type checker unifies two roles: a **normalizer** that evaluates expressions inside types and a **verifier** that checks structural constraints. This project splits those roles across two compilation phases.
+
+**The macro is the normalizer.** It is a Turing-complete program that evaluates arithmetic, computes CF convergents, Fibonacci numbers, Wallis partial products -- arbitrary Swift at compile time. It emits witness types as typealiases.
+
+**The type checker is the verifier.** It structurally checks every `where` constraint, every associated type resolution, every `assertEqual` unification. It cannot be fooled by the macro: a wrong macro emits wrong witnesses; the type checker rejects them.
+
+The separation is a feature. The normalizer can compute anything, but the verifier only accepts structurally valid witnesses. Universal theorems (addition commutativity, multiplication left-zero) are the verifier alone -- no macro needed, because conditional conformance IS structural induction. Bounded proofs (pi convergence, Fibonacci, Wallis) require normalizer + verifier together, because the arithmetic depends on the depth.
+
+## Limitations and the universality gap
+
+The CF recurrence `h_{n+1} = a_n * h_n + h_{n-1}` requires the coefficient `a_n` to depend on the depth `n`. A full dependent type system would normalize `a_n` at abstract `n`; Swift's type checker cannot. Coinductive streams encode the *identity* of an irrational number (its coefficient sequence) but not the *computation* of convergents from that sequence.
+
+Universal theorems work when the inductive step is structurally uniform -- the same operation at every depth. `AddCommutative` applies the same `SuccLeftAdd` transformation at each inductive step regardless of the proof's shape. Bounded proofs are needed when the step varies: different CF coefficients at each depth, different Wallis factors at each step, different Fibonacci sums at each level.
+
+This is the precise boundary between what Swift's type system can prove universally (via conditional conformance as structural induction) and what requires macro assistance (via compile-time computation as normalization).
+
 ## Cayley-Dickson construction
 
 The Cayley-Dickson construction builds higher-dimensional algebras from pairs. The type-level representation `CayleyDickson<Re, Im>` encodes the structure:
@@ -142,6 +160,32 @@ assertEqual(PiProof._CF2.Q.self, PiProof._LS3.P.self)  // 13 = 13
 ```
 
 Since both sequences converge and their values agree at every depth, they converge to the same limit. The compilation itself is the proof.
+
+## Wallis product
+
+The Wallis product provides a third construction of pi:
+
+```
+pi/2 = prod_{k=1}^{inf} (2k)^2 / ((2k-1)(2k+1))
+```
+
+Unreduced partial products: W_0 = 1/1, W_1 = 4/3, W_2 = 64/45. Each step multiplies the numerator by (2k)^2 and the denominator by (2k-1)(2k+1). The structural fingerprint: at each step, the numerator factor exceeds the denominator factor by exactly 1:
+
+```
+(2k)^2 = (2k-1)(2k+1) + 1
+```
+
+This difference-of-squares identity is provable at the type level via a `PlusSucc<PlusZero<...>>` witness. The `@WallisProductProof(depth:)` macro uses a two-step product decomposition (multiplying by 2k twice rather than (2k)^2 once) to keep factor sizes manageable:
+
+```swift
+@WallisProductProof(depth: 2)
+enum WallisProof {}
+
+assertEqual(WallisProof._W1.P.self, N4.self)   // W_1 numerator = 4
+assertEqual(WallisProof._W1.Q.self, N3.self)   // W_1 denominator = 3
+```
+
+The macro also emits a factor correspondence check proving (2k-1)(2k+1) + 1 = (2k)^2 at each depth. The proof is self-contained: `WallisStep` constraints verify each multiplication, and the factor correspondence proves the difference-of-squares identity.
 
 ## Golden ratio and Fibonacci
 

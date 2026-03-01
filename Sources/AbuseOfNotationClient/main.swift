@@ -299,7 +299,38 @@ assertEqual(PiProof._LS4.Q.self, N105.self)
 // Since both sequences converge, and their values agree, they converge to
 // the same limit: pi.
 
-// MARK: - 10. Non-constant base case: Seed<A>
+// MARK: - 10. Wallis product (macro-generated proof)
+
+// The Wallis product for pi/2:
+//   pi/2 = prod_{k=1}^{inf} (2k)^2 / ((2k-1)(2k+1))
+//
+// Unreduced partial products: W_0 = 1/1, W_1 = 4/3, W_2 = 64/45, ...
+//
+// Each step multiplies the numerator by (2k)^2 and the denominator by
+// (2k-1)(2k+1). The structural fingerprint: the numerator factor exceeds
+// the denominator factor by exactly 1 at each step:
+//   (2k)^2 = (2k-1)(2k+1) + 1
+//
+// This is provable at the type level: the macro emits a PlusSucc<PlusZero<...>>
+// witness for each k. The factor correspondence is a difference-of-squares
+// identity, verified by the type checker.
+//
+// Products grow fast, so the macro uses a two-step decomposition:
+//   Numerator:   prev_p * 2k, then result * 2k
+//   Denominator: prev_q * (2k-1), then result * (2k+1)
+
+@WallisProductProof(depth: 2)
+enum WallisProof {}
+
+// Verify W_0 = 1/1:
+assertEqual(WallisProof._W0.P.self, N1.self)
+assertEqual(WallisProof._W0.Q.self, N1.self)
+
+// Verify W_1 = 4/3:
+assertEqual(WallisProof._W1.P.self, N4.self)
+assertEqual(WallisProof._W1.Q.self, N3.self)
+
+// MARK: - 11. Non-constant base case: Seed<A>
 
 // The _TimesN2 pattern has a constant base case: Zero._TimesN2Result = Zero.
 // By introducing Seed<A> — a parameterized type that conforms to Natural —
@@ -316,7 +347,7 @@ assertEqual(Seed<N0>._Sum.self, N0.self)
 assertEqual(Seed<N9>._Sum.self, N9.self)
 assertEqual(AddOne<AddOne<AddOne<Seed<N4>>>>._Sum.self, N7.self)  // 4 + 3 = 7
 
-// MARK: - 11. Fibonacci at the type level (macro-generated proof)
+// MARK: - 12. Fibonacci at the type level (macro-generated proof)
 
 // The FibVerified protocol uses a where clause on its SumWitness
 // associated type to force Next == Prev + Current. Each FibStep
@@ -340,7 +371,7 @@ assertEqual(FibProof._Fib4.Current.self, N3.self)  // F(4) = 3
 assertEqual(FibProof._Fib5.Current.self, N5.self)  // F(5) = 5
 assertEqual(FibProof._Fib6.Current.self, N8.self)  // F(6) = 8
 
-// MARK: - 12. Golden ratio and Fibonacci (macro-generated proof)
+// MARK: - 13. Golden ratio and Fibonacci (macro-generated proof)
 
 // The golden ratio phi = (1 + sqrt(5))/2 has the simplest continued fraction:
 //   phi = [1; 1, 1, 1, ...]
@@ -371,7 +402,7 @@ assertEqual(GoldenRatioProof._CF4.Q.self, N5.self)   // k_4 = 5 = F(5)
 assertEqual(GoldenRatioProof._CF5.P.self, N13.self)  // h_5 = 13 = F(7)
 assertEqual(GoldenRatioProof._CF5.Q.self, N8.self)   // k_5 = 8 = F(6)
 
-// MARK: - 13. sqrt(2) CF and matrix construction (macro-generated proof)
+// MARK: - 14. sqrt(2) CF and matrix construction (macro-generated proof)
 
 // The continued fraction for sqrt(2) is [1; 2, 2, 2, ...]:
 //   sqrt(2) = 1 + 1/(2 + 1/(2 + 1/(2 + ...)))
@@ -410,7 +441,7 @@ assertEqual(Sqrt2Proof._MAT2.B.self, N5.self)   // MAT2 top-right = k_2 = 5
 assertEqual(Sqrt2Proof._MAT3.A.self, N17.self)  // MAT3 top-left = h_3 = 17
 assertEqual(Sqrt2Proof._MAT3.B.self, N12.self)  // MAT3 top-right = k_3 = 12
 
-// MARK: - 14. Universal addition theorems (structural induction)
+// MARK: - 15. Universal addition theorems (structural induction)
 //
 // Unlike the proofs above (which verify specific values), these theorems
 // hold for ALL natural numbers. The proof is conditional conformance:
@@ -485,7 +516,7 @@ assertEqual(ThreePlusThree.Commuted.Left.self, N3.self)
 assertEqual(ThreePlusThree.Commuted.Right.self, N3.self)
 assertEqual(ThreePlusThree.Commuted.Total.self, N6.self)
 
-// MARK: - 15. Associativity of addition (ProofSeed)
+// MARK: - 16. Associativity of addition (ProofSeed)
 //
 // Associativity -- (a + b) + c = a + (b + c) -- is a binary theorem: it
 // requires TWO addition proofs (one for a+b, one for the result plus c).
@@ -536,7 +567,7 @@ assertEqual(Assoc2p3p2.AssocProof.Total.self, N7.self)      // d + c = 5 + 2 = 7
 typealias FivePlusTwo = PlusSucc<PlusSucc<PlusZero<N5>>>
 assertEqual(Assoc2p3p2.AssocProof.Total.self, FivePlusTwo.Total.self)
 
-// MARK: - 16. Universal multiplication theorems (structural induction)
+// MARK: - 17. Universal multiplication theorems (structural induction)
 //
 // TimesSucc has where clauses that trigger rewrite system explosion when
 // composed in inductive protocols. The flat encoding (TimesTick/TimesGroup)
@@ -685,7 +716,7 @@ assertEqual(MulComm5._Fwd2.Right.self, N2.self)
 assertEqual(MulComm5._Rev2.Left.self, N2.self)   // 2 * 5
 assertEqual(MulComm5._Rev2.Right.self, N5.self)
 
-// MARK: - 17. Coinductive streams for irrational numbers
+// MARK: - 18. Coinductive streams for irrational numbers
 //
 // The proofs above represent irrational numbers through bounded-depth
 // convergent chains (macro-generated). Coinductive streams provide a
@@ -766,9 +797,10 @@ assertEqual(Sqrt2CF.Head.self, Sqrt2Proof._CF0.P.self)         // both N1
 // means every assertEqual call above unified its type arguments and every
 // witness type satisfied its protocol constraints. The compiler verified
 // 100+ mathematical facts about natural numbers, their arithmetic,
-// continued fractions, the Leibniz series, the golden ratio / Fibonacci
-// correspondence, the sqrt(2) CF / matrix construction, four universal
-// addition theorems (left zero identity, successor-left shift,
+// continued fractions, the Leibniz series, the Wallis product (with its
+// difference-of-squares factor correspondence), the golden ratio /
+// Fibonacci correspondence, the sqrt(2) CF / matrix construction, four
+// universal addition theorems (left zero identity, successor-left shift,
 // commutativity, and associativity), three universal multiplication
 // theorems (left zero annihilation, successor-left multiplication, and
 // per-A commutativity -- including macro-generated proofs for N4 and N5),

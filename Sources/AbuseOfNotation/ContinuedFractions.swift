@@ -119,6 +119,47 @@ where
     public typealias Q = QTimesD.Total     // q*d
 }
 
+// MARK: - Wallis product partial product
+
+/// State of the Wallis product pi/2 = prod_{k=1}^{inf} (2k)^2 / ((2k-1)(2k+1))
+/// after k steps. P/Q is the unreduced partial product numerator/denominator.
+public protocol WallisPartialProduct {
+    associatedtype P: Natural  // numerator
+    associatedtype Q: Natural  // denominator
+}
+
+/// W_0 = 1/1 (empty product).
+public struct WallisBase: WallisPartialProduct {
+    public typealias P = AddOne<Zero>
+    public typealias Q = AddOne<Zero>
+}
+
+/// Wallis step: multiply numerator by (2k)^2 and denominator by (2k-1)(2k+1).
+///
+/// Two-step product decomposition to keep factor sizes manageable:
+///   Numerator:   prev_p * 2k = mid_p, then mid_p * 2k = new_p
+///   Denominator: prev_q * (2k-1) = mid_q, then mid_q * (2k+1) = new_q
+///
+/// The `PTimesTwoK.Right == MidPTimesTwoK.Right` constraint ensures
+/// both numerator multiplications use the same factor 2k.
+public struct WallisStep<
+    Prev: WallisPartialProduct,
+    PTimesTwoK: NaturalProduct,
+    MidPTimesTwoK: NaturalProduct,
+    QTimesTwoKm1: NaturalProduct,
+    MidQTimesTwoKp1: NaturalProduct
+>: WallisPartialProduct
+where
+    PTimesTwoK.Left == Prev.P,               // prev_p * 2k
+    MidPTimesTwoK.Left == PTimesTwoK.Total,   // (prev_p * 2k) * 2k
+    PTimesTwoK.Right == MidPTimesTwoK.Right,  // same 2k
+    QTimesTwoKm1.Left == Prev.Q,              // prev_q * (2k-1)
+    MidQTimesTwoKp1.Left == QTimesTwoKm1.Total // (prev_q * (2k-1)) * (2k+1)
+{
+    public typealias P = MidPTimesTwoK.Total   // prev_p * (2k)^2
+    public typealias Q = MidQTimesTwoKp1.Total // prev_q * (2k-1)(2k+1)
+}
+
 // MARK: - 2x2 matrix (type-level)
 
 /// A 2x2 matrix of natural numbers, encoded as four associated types.
