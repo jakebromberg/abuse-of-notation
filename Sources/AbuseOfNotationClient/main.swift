@@ -906,6 +906,75 @@ assertEqual(Distr2x2p3.DistrSum.Total.self, N10.self)   // 4 + 6 = 10
 
 useDistributivity(Distr2x2p3.self)
 
+// MARK: - 20. Algebraic identity: n*(n+2) + 1 = (n+1)^2
+//
+// The Wallis product uses the factor correspondence (2k-1)(2k+1) + 1 = (2k)^2
+// at each step. This is an instance of the universal algebraic identity
+// n*(n+2) + 1 = (n+1)^2 -- the "difference of squares" identity.
+//
+// The algebraic reason it holds: both sides decompose via a shared base n*(n+1).
+//   (n+1)^2     = n*(n+1) + (n+1)    [SuccLeftMul: S(n) * (n+1) = n*(n+1) + (n+1)]
+//   n*(n+2)     = n*((n+1)+1)
+//               = n*(n+1) + n*1
+//               = n*(n+1) + n         [distributivity + MulRightOne]
+//   Difference  = (n+1) - n = 1
+//
+// Both share n*(n+1) as a common term. The remainders differ by exactly 1.
+// Below we demonstrate this at n=1 and n=2 using SuccLeftMul and MulDistributive.
+
+// -- n = 1: 1*3 + 1 = 4 = 2*2 --
+// Shared base: 1*2 = 2  (FlatMul1x2 below)
+// (n+1)^2 = 2*2: FlatMul1x2.Distributed witnesses 2*2 = 1*2 + 2 = 2 + 2 = 4
+// n*(n+2) = 1*3: ProductSeed<FlatMul1x2> + 1 group of 1 tick = 1*(2+1) = 2 + 1 = 3
+
+typealias FlatMul1x0 = TimesZero<N1>
+typealias FlatMul1x1 = TimesGroup<TimesTick<FlatMul1x0>>
+typealias FlatMul1x2 = TimesGroup<TimesTick<FlatMul1x1>>
+
+assertEqual(FlatMul1x2.Total.self, N2.self)                      // 1 * 2 = 2
+
+// SuccLeftMul: 1*2 = 2 => 2*2 = 2 + 2 = 4
+assertEqual(FlatMul1x2.Distributed.Left.self, N2.self)           // S(1) = 2
+assertEqual(FlatMul1x2.Distributed.Right.self, N2.self)          // right = 2
+assertEqual(FlatMul1x2.Distributed.Total.self, N4.self)          // 2*2 = 4
+
+// Distributivity: 1*(2+1) = 1*2 + 1*1 = 2 + 1 = 3
+typealias Distr1x2p1 = TimesGroup<TimesTick<ProductSeed<FlatMul1x2>>>
+assertEqual(Distr1x2p1.Total.self, N3.self)                      // 1*3 = 3
+assertEqual(Distr1x2p1.DistrSum.Left.self, N2.self)              // 1*2 = 2
+assertEqual(Distr1x2p1.DistrSum.Right.self, N1.self)             // 1*1 = 1
+assertEqual(Distr1x2p1.DistrSum.Total.self, N3.self)             // 2 + 1 = 3
+
+// The identity: 1*3 + 1 = 4 = 2*2
+typealias DiffSq1 = PlusSucc<PlusZero<N3>>                       // 3 + 1 = 4
+assertEqual(DiffSq1.Total.self, FlatMul1x2.Distributed.Total.self)  // 4 = 4 ✓
+
+// -- n = 2: 2*4 + 1 = 9 = 3*3 --
+// Shared base: 2*3 = 6  (FlatMul2x3 from section 17)
+// (n+1)^2 = 3*3: FlatMul2x3.Distributed witnesses 3*3 = 2*3 + 3 = 6 + 3 = 9
+// n*(n+2) = 2*4: ProductSeed<FlatMul2x3> + 1 group of 2 ticks = 2*(3+1) = 6 + 2 = 8
+
+// SuccLeftMul: 2*3 = 6 => 3*3 = 6 + 3 = 9
+assertEqual(FlatMul2x3.Distributed.Left.self, N3.self)           // S(2) = 3
+assertEqual(FlatMul2x3.Distributed.Right.self, N3.self)          // right = 3
+assertEqual(FlatMul2x3.Distributed.Total.self, N9.self)          // 3*3 = 9
+
+// Distributivity: 2*(3+1) = 2*3 + 2*1 = 6 + 2 = 8
+typealias Distr2x3p1 = TimesGroup<TimesTick<TimesTick<ProductSeed<FlatMul2x3>>>>
+assertEqual(Distr2x3p1.Total.self, N8.self)                      // 2*4 = 8
+assertEqual(Distr2x3p1.DistrSum.Left.self, N6.self)              // 2*3 = 6
+assertEqual(Distr2x3p1.DistrSum.Right.self, N2.self)             // 2*1 = 2
+assertEqual(Distr2x3p1.DistrSum.Total.self, N8.self)             // 6 + 2 = 8
+
+// The identity: 2*4 + 1 = 9 = 3*3
+typealias DiffSq2 = PlusSucc<PlusZero<N8>>                       // 8 + 1 = 9
+assertEqual(DiffSq2.Total.self, FlatMul2x3.Distributed.Total.self)  // 9 = 9 ✓
+
+// Both decompositions share FlatMul2x3 (the proof of 2*3 = 6):
+//   3*3 = 6 + 3  (SuccLeftMul adds Right = 3)
+//   2*4 = 6 + 2  (distributivity adds 2 ticks = one group of Left = 2)
+// The remainders (3 vs 2) differ by 1 -- that's the structural reason.
+
 // MARK: - Epilogue
 //
 // If you're reading this, the program compiled and exited cleanly. That
