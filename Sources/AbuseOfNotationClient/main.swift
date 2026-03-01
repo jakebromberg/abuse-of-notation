@@ -651,6 +651,47 @@ assertEqual(FlatMul2x2.Distributed.Left.self, N3.self)
 assertEqual(FlatMul2x2.Distributed.Right.self, N2.self)
 assertEqual(FlatMul2x2.Distributed.Total.self, N6.self)
 
+// -- Theorem 4: n * 1 = n (right multiplicative identity) --
+// Proved by: extension Zero: MulRightOne + extension AddOne: MulRightOne
+// Base case uses TimesGroup<TimesZero<Zero>>; step uses SuccLeftMul.Distributed.
+func useMulRightOne<N: MulRightOne>(_: N.Type) {}
+useMulRightOne(N0.self)
+useMulRightOne(N5.self)
+useMulRightOne(N9.self)
+
+// Verify structural correctness:
+assertEqual(N0.TimesOneProof.Left.self, N0.self)     // 0 * 1: left = 0
+assertEqual(N0.TimesOneProof.Right.self, N1.self)    // 0 * 1: right = 1
+assertEqual(N0.TimesOneProof.Total.self, N0.self)    // 0 * 1 = 0
+
+assertEqual(N5.TimesOneProof.Left.self, N5.self)     // 5 * 1: left = 5
+assertEqual(N5.TimesOneProof.Right.self, N1.self)    // 5 * 1: right = 1
+assertEqual(N5.TimesOneProof.Total.self, N5.self)    // 5 * 1 = 5
+
+assertEqual(N9.TimesOneProof.Left.self, N9.self)     // 9 * 1: left = 9
+assertEqual(N9.TimesOneProof.Right.self, N1.self)    // 9 * 1: right = 1
+assertEqual(N9.TimesOneProof.Total.self, N9.self)    // 9 * 1 = 9
+
+// -- Theorem 5: 1 * n = n (left multiplicative identity) --
+// Proved by: extension Zero: MulLeftOne + extension AddOne: MulLeftOne
+// Each step adds one tick (Left = 1) and one group boundary.
+func useMulLeftOne<N: MulLeftOne>(_: N.Type) {}
+useMulLeftOne(N0.self)
+useMulLeftOne(N5.self)
+useMulLeftOne(N9.self)
+
+assertEqual(N0.OneTimesProof.Left.self, N1.self)     // 1 * 0: left = 1
+assertEqual(N0.OneTimesProof.Right.self, N0.self)    // 1 * 0: right = 0
+assertEqual(N0.OneTimesProof.Total.self, N0.self)    // 1 * 0 = 0
+
+assertEqual(N5.OneTimesProof.Left.self, N1.self)     // 1 * 5: left = 1
+assertEqual(N5.OneTimesProof.Right.self, N5.self)    // 1 * 5: right = 5
+assertEqual(N5.OneTimesProof.Total.self, N5.self)    // 1 * 5 = 5
+
+assertEqual(N9.OneTimesProof.Left.self, N1.self)     // 1 * 9: left = 1
+assertEqual(N9.OneTimesProof.Right.self, N9.self)    // 1 * 9: right = 9
+assertEqual(N9.OneTimesProof.Total.self, N9.self)    // 1 * 9 = 9
+
 // -- Theorem 3: a * b = b * a (commutativity, per fixed A) --
 // For each fixed A (N2, N3, ...), proves A * b = b * A for all b.
 // The forward proof constructs A * b directly (A ticks per group).
@@ -791,6 +832,220 @@ assertEqual(PhiCF.Head.self, GoldenRatioProof._CF0.P.self)    // both N1
 // Sqrt2: Sqrt2CF.Head = 1, matching [1; 2, 2, ...]
 assertEqual(Sqrt2CF.Head.self, Sqrt2Proof._CF0.P.self)         // both N1
 
+// MARK: - 19. Distributivity of multiplication over addition
+//
+// Distributivity -- a * (b + c) = a*b + a*c -- bridges the sum and product
+// witness systems. The flat encoding makes it natural: a * (b + c) has
+// (b + c) groups of a ticks, which is b groups (the a*b part) followed by
+// c groups (the a*c part).
+//
+// ProductSeed<Q> wraps an existing product proof Q (for a*b). TimesTick and
+// TimesGroup layers on top represent a*c. The MulDistributive protocol
+// tracks a NaturalSum witness through the product proof:
+//   - ProductSeed<Q>: DistrSum = PlusZero<Q.Total>  (a*b + 0 = a*b)
+//   - TimesTick:      DistrSum = PlusSucc<...>       (adds 1 to the sum)
+//   - TimesGroup:     DistrSum unchanged             (group boundary)
+//
+// At the end, DistrSum witnesses a*b + a*c = a*(b+c).
+
+// The generic constraint proves universality: every MulDistributive proof
+// carries a DistrSum witnessing the distributive decomposition.
+func useDistributivity<P: MulDistributive>(_: P.Type) {}
+
+// Example 1: 2 * (1 + 1) = 2*1 + 2*1 = 2 + 2 = 4
+// Start with FlatMul2x1 (2*1 = 2), add 1 group of 2 ticks.
+typealias Distr2x1p1 = TimesGroup<TimesTick<TimesTick<ProductSeed<FlatMul2x1>>>>
+
+assertEqual(Distr2x1p1.Left.self, N2.self)              // a = 2
+assertEqual(Distr2x1p1.Right.self, N2.self)             // b + c = 1 + 1 = 2
+assertEqual(Distr2x1p1.Total.self, N4.self)             // 2 * 2 = 4
+
+assertEqual(Distr2x1p1.DistrSum.Left.self, N2.self)     // a*b = 2*1 = 2
+assertEqual(Distr2x1p1.DistrSum.Right.self, N2.self)    // a*c = 2*1 = 2
+assertEqual(Distr2x1p1.DistrSum.Total.self, N4.self)    // 2 + 2 = 4
+
+useDistributivity(Distr2x1p1.self)
+
+// Example 2: 3 * (2 + 1) = 3*2 + 3*1 = 6 + 3 = 9
+// Define flat proofs for 3*0, 3*1, 3*2 (3 ticks per group).
+typealias FlatMul3x0 = TimesZero<N3>
+typealias FlatMul3x1 = TimesGroup<TimesTick<TimesTick<TimesTick<FlatMul3x0>>>>
+typealias FlatMul3x2 = TimesGroup<TimesTick<TimesTick<TimesTick<FlatMul3x1>>>>
+
+assertEqual(FlatMul3x2.Left.self, N3.self)
+assertEqual(FlatMul3x2.Right.self, N2.self)
+assertEqual(FlatMul3x2.Total.self, N6.self)             // 3 * 2 = 6
+
+// Stack 1 group of 3 ticks on ProductSeed<FlatMul3x2>.
+typealias Distr3x2p1 = TimesGroup<TimesTick<TimesTick<TimesTick<ProductSeed<FlatMul3x2>>>>>
+
+assertEqual(Distr3x2p1.Left.self, N3.self)              // a = 3
+assertEqual(Distr3x2p1.Right.self, N3.self)             // b + c = 2 + 1 = 3
+assertEqual(Distr3x2p1.Total.self, N9.self)             // 3 * 3 = 9
+
+assertEqual(Distr3x2p1.DistrSum.Left.self, N6.self)     // a*b = 3*2 = 6
+assertEqual(Distr3x2p1.DistrSum.Right.self, N3.self)    // a*c = 3*1 = 3
+assertEqual(Distr3x2p1.DistrSum.Total.self, N9.self)    // 6 + 3 = 9
+
+useDistributivity(Distr3x2p1.self)
+
+// Example 3: 2 * (2 + 3) = 2*2 + 2*3 = 4 + 6 = 10
+// Stack 3 groups of 2 ticks on ProductSeed<FlatMul2x2>.
+typealias Distr2x2p3 = TimesGroup<TimesTick<TimesTick<
+                          TimesGroup<TimesTick<TimesTick<
+                            TimesGroup<TimesTick<TimesTick<
+                              ProductSeed<FlatMul2x2>>>>>>>>>>
+
+assertEqual(Distr2x2p3.Left.self, N2.self)              // a = 2
+assertEqual(Distr2x2p3.Right.self, N5.self)             // b + c = 2 + 3 = 5
+assertEqual(Distr2x2p3.Total.self, N10.self)            // 2 * 5 = 10
+
+assertEqual(Distr2x2p3.DistrSum.Left.self, N4.self)     // a*b = 2*2 = 4
+assertEqual(Distr2x2p3.DistrSum.Right.self, N6.self)    // a*c = 2*3 = 6
+assertEqual(Distr2x2p3.DistrSum.Total.self, N10.self)   // 4 + 6 = 10
+
+useDistributivity(Distr2x2p3.self)
+
+// MARK: - 20. Algebraic identity: n*(n+2) + 1 = (n+1)^2
+//
+// The Wallis product uses the factor correspondence (2k-1)(2k+1) + 1 = (2k)^2
+// at each step. This is an instance of the universal algebraic identity
+// n*(n+2) + 1 = (n+1)^2 -- the "difference of squares" identity.
+//
+// The algebraic reason it holds: both sides decompose via a shared base n*(n+1).
+//   (n+1)^2     = n*(n+1) + (n+1)    [SuccLeftMul: S(n) * (n+1) = n*(n+1) + (n+1)]
+//   n*(n+2)     = n*((n+1)+1)
+//               = n*(n+1) + n*1
+//               = n*(n+1) + n         [distributivity + MulRightOne]
+//   Difference  = (n+1) - n = 1
+//
+// Both share n*(n+1) as a common term. The remainders differ by exactly 1.
+// Below we demonstrate this at n=1 and n=2 using SuccLeftMul and MulDistributive.
+
+// -- n = 1: 1*3 + 1 = 4 = 2*2 --
+// Shared base: 1*2 = 2  (FlatMul1x2 below)
+// (n+1)^2 = 2*2: FlatMul1x2.Distributed witnesses 2*2 = 1*2 + 2 = 2 + 2 = 4
+// n*(n+2) = 1*3: ProductSeed<FlatMul1x2> + 1 group of 1 tick = 1*(2+1) = 2 + 1 = 3
+
+typealias FlatMul1x0 = TimesZero<N1>
+typealias FlatMul1x1 = TimesGroup<TimesTick<FlatMul1x0>>
+typealias FlatMul1x2 = TimesGroup<TimesTick<FlatMul1x1>>
+
+assertEqual(FlatMul1x2.Total.self, N2.self)                      // 1 * 2 = 2
+
+// SuccLeftMul: 1*2 = 2 => 2*2 = 2 + 2 = 4
+assertEqual(FlatMul1x2.Distributed.Left.self, N2.self)           // S(1) = 2
+assertEqual(FlatMul1x2.Distributed.Right.self, N2.self)          // right = 2
+assertEqual(FlatMul1x2.Distributed.Total.self, N4.self)          // 2*2 = 4
+
+// Distributivity: 1*(2+1) = 1*2 + 1*1 = 2 + 1 = 3
+typealias Distr1x2p1 = TimesGroup<TimesTick<ProductSeed<FlatMul1x2>>>
+assertEqual(Distr1x2p1.Total.self, N3.self)                      // 1*3 = 3
+assertEqual(Distr1x2p1.DistrSum.Left.self, N2.self)              // 1*2 = 2
+assertEqual(Distr1x2p1.DistrSum.Right.self, N1.self)             // 1*1 = 1
+assertEqual(Distr1x2p1.DistrSum.Total.self, N3.self)             // 2 + 1 = 3
+
+// The identity: 1*3 + 1 = 4 = 2*2
+typealias DiffSq1 = PlusSucc<PlusZero<N3>>                       // 3 + 1 = 4
+assertEqual(DiffSq1.Total.self, FlatMul1x2.Distributed.Total.self)  // 4 = 4 ✓
+
+// -- n = 2: 2*4 + 1 = 9 = 3*3 --
+// Shared base: 2*3 = 6  (FlatMul2x3 from section 17)
+// (n+1)^2 = 3*3: FlatMul2x3.Distributed witnesses 3*3 = 2*3 + 3 = 6 + 3 = 9
+// n*(n+2) = 2*4: ProductSeed<FlatMul2x3> + 1 group of 2 ticks = 2*(3+1) = 6 + 2 = 8
+
+// SuccLeftMul: 2*3 = 6 => 3*3 = 6 + 3 = 9
+assertEqual(FlatMul2x3.Distributed.Left.self, N3.self)           // S(2) = 3
+assertEqual(FlatMul2x3.Distributed.Right.self, N3.self)          // right = 3
+assertEqual(FlatMul2x3.Distributed.Total.self, N9.self)          // 3*3 = 9
+
+// Distributivity: 2*(3+1) = 2*3 + 2*1 = 6 + 2 = 8
+typealias Distr2x3p1 = TimesGroup<TimesTick<TimesTick<ProductSeed<FlatMul2x3>>>>
+assertEqual(Distr2x3p1.Total.self, N8.self)                      // 2*4 = 8
+assertEqual(Distr2x3p1.DistrSum.Left.self, N6.self)              // 2*3 = 6
+assertEqual(Distr2x3p1.DistrSum.Right.self, N2.self)             // 2*1 = 2
+assertEqual(Distr2x3p1.DistrSum.Total.self, N8.self)             // 6 + 2 = 8
+
+// The identity: 2*4 + 1 = 9 = 3*3
+typealias DiffSq2 = PlusSucc<PlusZero<N8>>                       // 8 + 1 = 9
+assertEqual(DiffSq2.Total.self, FlatMul2x3.Distributed.Total.self)  // 9 = 9 ✓
+
+// Both decompositions share FlatMul2x3 (the proof of 2*3 = 6):
+//   3*3 = 6 + 3  (SuccLeftMul adds Right = 3)
+//   2*4 = 6 + 2  (distributivity adds 2 ticks = one group of Left = 2)
+// The remainders (3 vs 2) differ by 1 -- that's the structural reason.
+
+// MARK: - 21. Cassini identity for Fibonacci numbers
+//
+// The Cassini identity is a number-theoretic theorem about Fibonacci:
+//   F(n-1)*F(n+1) - F(n)^2 = (-1)^n
+//
+// In naturals (avoiding negatives), the sign alternates which side gets +1:
+//   Even n: F(n-1)*F(n+1) = F(n)^2 + 1
+//   Odd n:  F(n-1)*F(n+1) + 1 = F(n)^2
+//
+// The key step uses distributivity:
+//   F(n+1)*F(n-1) = (F(n) + F(n-1)) * F(n-1)    [Fibonacci recurrence]
+//                 = F(n)*F(n-1) + F(n-1)^2        [distributivity]
+//
+// This relates the cross-product at step n to the square and cross-product
+// at step n-1. It's a theorem ABOUT Fibonacci, not just a computation OF it.
+
+// -- n = 2 (even): F(1)*F(3) = F(2)^2 + 1 => 1*2 = 1 + 1 => 2 = 2 --
+// F(1)=1, F(2)=1, F(3)=2
+
+// F(2)^2 = 1*1 = 1 (MulRightOne)
+assertEqual(N1.TimesOneProof.Total.self, N1.self)                 // 1*1 = 1
+
+// F(1)*F(3) = 1*2 = 2 (MulLeftOne)
+assertEqual(N2.OneTimesProof.Total.self, N2.self)                 // 1*2 = 2
+
+// 1 + 1 = 2
+typealias Cassini2 = PlusSucc<PlusZero<N1>>
+assertEqual(Cassini2.Total.self, N2.OneTimesProof.Total.self)     // F(2)^2 + 1 = F(1)*F(3)
+
+// -- n = 3 (odd): F(2)*F(4) + 1 = F(3)^2 => 1*3 + 1 = 4 = 2*2 --
+// F(2)=1, F(3)=2, F(4)=3
+// This is also the n=1 difference-of-squares identity!
+
+// F(3)^2 = 2*2 = 4 (FlatMul2x2 from section 17)
+assertEqual(FlatMul2x2.Total.self, N4.self)                       // 2*2 = 4
+
+// F(2)*F(4) = 1*3 = 3 (Distr1x2p1 from section 20)
+assertEqual(Distr1x2p1.Total.self, N3.self)                       // 1*3 = 3
+
+// Distributive decomposition: F(4)*F(2) = (F(3)+F(2))*F(2) = F(3)*F(2) + F(2)^2
+// = (3)*1 = (2+1)*1 = 2*1 + 1*1 = 2 + 1 = 3
+// Using Distr1x2p1.DistrSum: Left=2 (F(3)*F(2)), Right=1 (F(2)^2), Total=3
+assertEqual(Distr1x2p1.DistrSum.Left.self, N2.self)               // F(3)*F(2) = 2
+assertEqual(Distr1x2p1.DistrSum.Right.self, N1.self)              // F(2)^2 = 1
+
+// 3 + 1 = 4
+typealias Cassini3 = PlusSucc<PlusZero<N3>>
+assertEqual(Cassini3.Total.self, FlatMul2x2.Total.self)           // F(2)*F(4) + 1 = F(3)^2
+
+// -- n = 4 (even): F(3)*F(5) = F(4)^2 + 1 => 2*5 = 9 + 1 = 10 --
+// F(3)=2, F(4)=3, F(5)=5
+
+// F(4)^2 = 3*3: use SuccLeftMul on FlatMul2x3
+assertEqual(FlatMul2x3.Distributed.Total.self, N9.self)           // 3*3 = 9
+
+// F(3)*F(5) = 2*5 = 10: 5 groups of 2 ticks
+typealias FlatMul2x4 = TimesGroup<TimesTick<TimesTick<FlatMul2x3>>>
+typealias FlatMul2x5 = TimesGroup<TimesTick<TimesTick<FlatMul2x4>>>
+assertEqual(FlatMul2x5.Total.self, N10.self)                      // 2*5 = 10
+
+// Distributive decomposition: F(5)*F(3) = (F(4)+F(3))*F(3) = F(4)*F(3) + F(3)^2
+// 5*2 = (3+2)*2. Rewrite as: 2*(3+2) = 2*3 + 2*2 = 6 + 4 = 10
+// (Using commutativity of the natural number product, not the proof)
+assertEqual(Distr2x2p3.DistrSum.Left.self, N4.self)               // 2*2 = F(3)^2 = 4
+assertEqual(Distr2x2p3.DistrSum.Right.self, N6.self)              // 2*3 = F(4)*F(3) = 6
+assertEqual(Distr2x2p3.DistrSum.Total.self, N10.self)             // 4 + 6 = 10
+
+// 9 + 1 = 10
+typealias Cassini4 = PlusSucc<PlusZero<N9>>
+assertEqual(Cassini4.Total.self, FlatMul2x5.Total.self)           // F(4)^2 + 1 = F(3)*F(5)
+
 // MARK: - Epilogue
 //
 // If you're reading this, the program compiled and exited cleanly. That
@@ -801,9 +1056,10 @@ assertEqual(Sqrt2CF.Head.self, Sqrt2Proof._CF0.P.self)         // both N1
 // difference-of-squares factor correspondence), the golden ratio /
 // Fibonacci correspondence, the sqrt(2) CF / matrix construction, four
 // universal addition theorems (left zero identity, successor-left shift,
-// commutativity, and associativity), three universal multiplication
-// theorems (left zero annihilation, successor-left multiplication, and
-// per-A commutativity -- including macro-generated proofs for N4 and N5),
-// and coinductive streams for irrational numbers (PhiCF, Sqrt2CF with
-// universal unfold theorems) -- all without executing a single
-// computation at runtime.
+// commutativity, and associativity), six universal multiplication
+// theorems (left zero annihilation, successor-left multiplication,
+// per-A commutativity -- including macro-generated proofs for N4 and N5 --
+// right and left multiplicative identity, and distributivity over
+// addition), and coinductive streams for irrational
+// numbers (PhiCF, Sqrt2CF with universal unfold theorems) -- all without
+// executing a single computation at runtime.

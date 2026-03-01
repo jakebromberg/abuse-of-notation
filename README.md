@@ -311,6 +311,37 @@ assertEqual(MulComm4._Fwd3.Total.self, N12.self)                    // = 12
 
 Each `_FwdK` witnesses `A * K` using the flat encoding (A ticks per group), and each `_RevK` witnesses `K * A` via `SuccLeftMul.Distributed`. The type checker verifies that both Totals match at every depth.
 
+### Distributivity: `a * (b + c) = a*b + a*c`
+
+Distributivity bridges the sum and product witness systems. The flat encoding makes it natural: `a * (b + c)` has `(b + c)` groups of `a` ticks, which is `b` groups (the `a*b` part) followed by `c` groups (the `a*c` part).
+
+`ProductSeed<Q>` wraps an existing product proof `Q` (for `a*b`), analogous to `ProofSeed<P>` for addition associativity. TimesTick/TimesGroup layers on top represent `a*c`. The `MulDistributive` protocol tracks a `NaturalSum` witness (`DistrSum`) through the product proof:
+
+```swift
+// 2 * (1 + 1) = 2*1 + 2*1 = 2 + 2 = 4
+// Start with FlatMul2x1 (2*1 = 2), add 1 group of 2 ticks.
+typealias Distr2x1p1 = TimesGroup<TimesTick<TimesTick<ProductSeed<FlatMul2x1>>>>
+
+assertEqual(Distr2x1p1.Total.self, N4.self)             // 2 * 2 = 4
+assertEqual(Distr2x1p1.DistrSum.Left.self, N2.self)     // a*b = 2
+assertEqual(Distr2x1p1.DistrSum.Right.self, N2.self)    // a*c = 2
+assertEqual(Distr2x1p1.DistrSum.Total.self, N4.self)    // 2 + 2 = 4
+```
+
+Each `TimesTick` wraps `DistrSum` in `PlusSucc` (incrementing the sum), each `TimesGroup` passes it through unchanged, and `ProductSeed<Q>` starts with `PlusZero<Q.Total>`. The result: `DistrSum` witnesses `a*b + a*c = a*(b+c)`.
+
+### Multiplicative identity: `n * 1 = n` and `1 * n = n`
+
+`MulRightOne` proves `n * 1 = n` for all n. The base case is `TimesGroup<TimesZero<Zero>>` (one group of zero ticks); the inductive step uses `SuccLeftMul.Distributed` to add one tick to the single group. `MulLeftOne` proves `1 * n = n` by direct construction: one tick per group, n groups.
+
+### Algebraic identities via distributivity
+
+Distributivity combines with SuccLeftMul and MulRightOne to prove algebraic identities that explain *why* numerical correspondences hold, not just *that* they hold:
+
+**Difference of squares:** `n*(n+2) + 1 = (n+1)^2`. Both sides decompose via a shared base `n*(n+1)`: SuccLeftMul gives `(n+1)^2 = n*(n+1) + (n+1)`, and distributivity gives `n*(n+2) = n*(n+1) + n`. The remainders differ by exactly 1. This algebraically explains the Wallis product factor correspondence `(2k-1)(2k+1) + 1 = (2k)^2`.
+
+**Cassini identity:** `F(n-1)*F(n+1) - F(n)^2 = (-1)^n`. The key step uses distributivity: `F(n+1)*F(n-1) = (F(n) + F(n-1)) * F(n-1) = F(n)*F(n-1) + F(n-1)^2`. This is the first number-theoretic theorem in the project -- a statement about Fibonacci *structure*, not just Fibonacci *computation*.
+
 ## Coinductive streams for irrational numbers
 
 The convergent proofs above are bounded-depth: macros generate witness chains for specific values. Coinductive streams provide a complementary representation: the continued fraction coefficient sequence *itself* as a type.
