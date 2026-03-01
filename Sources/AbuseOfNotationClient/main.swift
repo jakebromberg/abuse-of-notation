@@ -791,6 +791,80 @@ assertEqual(PhiCF.Head.self, GoldenRatioProof._CF0.P.self)    // both N1
 // Sqrt2: Sqrt2CF.Head = 1, matching [1; 2, 2, ...]
 assertEqual(Sqrt2CF.Head.self, Sqrt2Proof._CF0.P.self)         // both N1
 
+// MARK: - 19. Distributivity of multiplication over addition
+//
+// Distributivity -- a * (b + c) = a*b + a*c -- bridges the sum and product
+// witness systems. The flat encoding makes it natural: a * (b + c) has
+// (b + c) groups of a ticks, which is b groups (the a*b part) followed by
+// c groups (the a*c part).
+//
+// ProductSeed<Q> wraps an existing product proof Q (for a*b). TimesTick and
+// TimesGroup layers on top represent a*c. The MulDistributive protocol
+// tracks a NaturalSum witness through the product proof:
+//   - ProductSeed<Q>: DistrSum = PlusZero<Q.Total>  (a*b + 0 = a*b)
+//   - TimesTick:      DistrSum = PlusSucc<...>       (adds 1 to the sum)
+//   - TimesGroup:     DistrSum unchanged             (group boundary)
+//
+// At the end, DistrSum witnesses a*b + a*c = a*(b+c).
+
+// The generic constraint proves universality: every MulDistributive proof
+// carries a DistrSum witnessing the distributive decomposition.
+func useDistributivity<P: MulDistributive>(_: P.Type) {}
+
+// Example 1: 2 * (1 + 1) = 2*1 + 2*1 = 2 + 2 = 4
+// Start with FlatMul2x1 (2*1 = 2), add 1 group of 2 ticks.
+typealias Distr2x1p1 = TimesGroup<TimesTick<TimesTick<ProductSeed<FlatMul2x1>>>>
+
+assertEqual(Distr2x1p1.Left.self, N2.self)              // a = 2
+assertEqual(Distr2x1p1.Right.self, N2.self)             // b + c = 1 + 1 = 2
+assertEqual(Distr2x1p1.Total.self, N4.self)             // 2 * 2 = 4
+
+assertEqual(Distr2x1p1.DistrSum.Left.self, N2.self)     // a*b = 2*1 = 2
+assertEqual(Distr2x1p1.DistrSum.Right.self, N2.self)    // a*c = 2*1 = 2
+assertEqual(Distr2x1p1.DistrSum.Total.self, N4.self)    // 2 + 2 = 4
+
+useDistributivity(Distr2x1p1.self)
+
+// Example 2: 3 * (2 + 1) = 3*2 + 3*1 = 6 + 3 = 9
+// Define flat proofs for 3*0, 3*1, 3*2 (3 ticks per group).
+typealias FlatMul3x0 = TimesZero<N3>
+typealias FlatMul3x1 = TimesGroup<TimesTick<TimesTick<TimesTick<FlatMul3x0>>>>
+typealias FlatMul3x2 = TimesGroup<TimesTick<TimesTick<TimesTick<FlatMul3x1>>>>
+
+assertEqual(FlatMul3x2.Left.self, N3.self)
+assertEqual(FlatMul3x2.Right.self, N2.self)
+assertEqual(FlatMul3x2.Total.self, N6.self)             // 3 * 2 = 6
+
+// Stack 1 group of 3 ticks on ProductSeed<FlatMul3x2>.
+typealias Distr3x2p1 = TimesGroup<TimesTick<TimesTick<TimesTick<ProductSeed<FlatMul3x2>>>>>
+
+assertEqual(Distr3x2p1.Left.self, N3.self)              // a = 3
+assertEqual(Distr3x2p1.Right.self, N3.self)             // b + c = 2 + 1 = 3
+assertEqual(Distr3x2p1.Total.self, N9.self)             // 3 * 3 = 9
+
+assertEqual(Distr3x2p1.DistrSum.Left.self, N6.self)     // a*b = 3*2 = 6
+assertEqual(Distr3x2p1.DistrSum.Right.self, N3.self)    // a*c = 3*1 = 3
+assertEqual(Distr3x2p1.DistrSum.Total.self, N9.self)    // 6 + 3 = 9
+
+useDistributivity(Distr3x2p1.self)
+
+// Example 3: 2 * (2 + 3) = 2*2 + 2*3 = 4 + 6 = 10
+// Stack 3 groups of 2 ticks on ProductSeed<FlatMul2x2>.
+typealias Distr2x2p3 = TimesGroup<TimesTick<TimesTick<
+                          TimesGroup<TimesTick<TimesTick<
+                            TimesGroup<TimesTick<TimesTick<
+                              ProductSeed<FlatMul2x2>>>>>>>>>>
+
+assertEqual(Distr2x2p3.Left.self, N2.self)              // a = 2
+assertEqual(Distr2x2p3.Right.self, N5.self)             // b + c = 2 + 3 = 5
+assertEqual(Distr2x2p3.Total.self, N10.self)            // 2 * 5 = 10
+
+assertEqual(Distr2x2p3.DistrSum.Left.self, N4.self)     // a*b = 2*2 = 4
+assertEqual(Distr2x2p3.DistrSum.Right.self, N6.self)    // a*c = 2*3 = 6
+assertEqual(Distr2x2p3.DistrSum.Total.self, N10.self)   // 4 + 6 = 10
+
+useDistributivity(Distr2x2p3.self)
+
 // MARK: - Epilogue
 //
 // If you're reading this, the program compiled and exited cleanly. That
@@ -801,9 +875,9 @@ assertEqual(Sqrt2CF.Head.self, Sqrt2Proof._CF0.P.self)         // both N1
 // difference-of-squares factor correspondence), the golden ratio /
 // Fibonacci correspondence, the sqrt(2) CF / matrix construction, four
 // universal addition theorems (left zero identity, successor-left shift,
-// commutativity, and associativity), three universal multiplication
-// theorems (left zero annihilation, successor-left multiplication, and
-// per-A commutativity -- including macro-generated proofs for N4 and N5),
-// and coinductive streams for irrational numbers (PhiCF, Sqrt2CF with
-// universal unfold theorems) -- all without executing a single
-// computation at runtime.
+// commutativity, and associativity), four universal multiplication
+// theorems (left zero annihilation, successor-left multiplication,
+// per-A commutativity -- including macro-generated proofs for N4 and N5 --
+// and distributivity over addition), and coinductive streams for irrational
+// numbers (PhiCF, Sqrt2CF with universal unfold theorems) -- all without
+// executing a single computation at runtime.
