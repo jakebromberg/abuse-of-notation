@@ -22,11 +22,15 @@
 .edgePath .path {
   stroke: #000000;
   stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .flowchart-link {
   stroke: #000000;
   fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .edgeLabel {

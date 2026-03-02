@@ -19,7 +19,7 @@
   },
   "flowchart": {
     "htmlLabels": true,
-    "curve": "basis",
+    "curve": "step",
     "nodeSpacing": 50,
     "rankSpacing": 60
   }
