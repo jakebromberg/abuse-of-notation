@@ -4,10 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cp index.html .index-source.html && node scripts/highlight.js && vite; cp .index-source.html index.html",
-    "build": "cp index.html .index-source.html && node scripts/highlight.js && vite build; cp .index-source.html index.html",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
-    "highlight": "node scripts/highlight.js",
     "diagrams": "bash scripts/generate-diagrams.sh"
   },
   "devDependencies": {
