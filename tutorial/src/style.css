@@ -76,6 +76,10 @@ body {
   flex-direction: column;
 }
 
+.sidebar .hero {
+  padding-bottom: 0.75rem;
+}
+
 .sidebar-title {
   font-size: var(--text-sm);
   font-weight: 700;
