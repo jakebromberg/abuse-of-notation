@@ -16,20 +16,20 @@
   /* Light theme */
   --bg: #fafaf9;
   --bg-sidebar: #f5f5f4;
-  --bg-code: #1e1e2e;
+  --bg-code: #e8e9ed;
   --bg-details: #f0eeeb;
   --text: #1c1917;
   --text-secondary: #57534e;
   --text-sidebar: #44403c;
   --text-sidebar-active: #1c1917;
-  --text-code: #cdd6f4;
+  --text-code: #4c4f69;
   --border: #d6d3d1;
   --border-light: #e7e5e4;
   --accent: #9333ea;
   --accent-light: #f3e8ff;
   --link: #7c3aed;
   --link-hover: #6d28d9;
-  --bg-macro: #eff1f5;
+  --bg-macro: #e8e9ed;
   --text-macro-label: #6c6f85;
 
   --sidebar-width: 260px;
@@ -195,7 +195,15 @@ body {
   font-size: var(--text-3xl);
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.tutorial-header h2 {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
 }
 
 .tutorial-header .subtitle {
@@ -294,7 +302,7 @@ a[target="_blank"]::after {
 /* -- Code blocks -- */
 pre {
   font-family: var(--font-mono);
-  font-size: var(--text-base);
+  font-size: 0.875rem;
   line-height: 1.6;
   background: var(--bg-code);
   color: var(--text-code);
@@ -323,11 +331,27 @@ pre code {
   margin-bottom: 1.5rem;
 }
 
+.shiki,
+.shiki span {
+  color: var(--shiki-light) !important;
+}
+
+.shiki span {
+  background-color: transparent !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark) !important;
+  }
+}
+
 /* -- Diagrams -- */
 .diagram-container {
   text-align: center;
-  margin: 2rem 1.5rem;
-  padding: 1.5rem;
+  margin: 2rem 0;
+  padding: 0.5rem;
   background: var(--bg);
   border: 1px solid var(--border-light);
   border-radius: 8px;
@@ -335,6 +359,8 @@ pre code {
 }
 
 .diagram-container img {
+  max-width: 100%;
+  max-height: 20rem;
   height: auto;
 }
 
@@ -400,13 +426,12 @@ details .details-content pre {
 /* -- Macro side-by-side panels -- */
 .macro-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0;
   margin: 2rem 0;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
-  max-width: calc(var(--content-max-width) + 8rem);
 }
 
 .macro-panel .macro-input,
@@ -416,32 +441,19 @@ details .details-content pre {
 }
 
 .macro-panel .macro-input {
-  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border);
 }
 
 .macro-panel .macro-input pre,
 .macro-panel .macro-output pre {
   margin: 0;
   border-radius: 0;
-  font-size: var(--text-sm);
+  font-size: 0.875rem;
 }
 
 .macro-panel .shiki {
   background: transparent !important;
-}
-
-.macro-panel .shiki,
-.macro-panel .shiki span {
-  color: var(--shiki-light) !important;
-  background-color: var(--shiki-light-bg) !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  .macro-panel .shiki,
-  .macro-panel .shiki span {
-    color: var(--shiki-dark) !important;
-    background-color: var(--shiki-dark-bg) !important;
-  }
+  margin-bottom: 0;
 }
 
 .macro-panel .macro-label {
@@ -550,15 +562,6 @@ details .details-content pre {
   .content {
     margin-left: 0;
     padding: 4rem 1.25rem 4rem;
-  }
-
-  .macro-panel {
-    grid-template-columns: 1fr;
-  }
-
-  .macro-panel .macro-input {
-    border-right: none;
-    border-bottom: 1px solid var(--border-light);
   }
 
   pre {

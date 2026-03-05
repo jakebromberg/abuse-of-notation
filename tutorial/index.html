@@ -53,8 +53,9 @@
 <div class="content-inner">
 
 <header class="tutorial-header">
-  <h1>Abuse of Notation</h1>
-  <p class="subtitle">A guided tour through encoding natural numbers and mathematical proofs as Swift types. Every statement is verified by the compiler &mdash; if this program compiles, every theorem is correct.</p>
+  <h1>An Abuse of Notation</h1>
+  <h2>t ∈ ⟦Swift⟧</h2>
+  <p class="subtitle">A guided tour through encoding natural numbers and mathematical proofs as Swift types. Every statement is verified by the compiler &mdash; if this program compiles, every theorem is correct. The source code for this project is available on <a href="https://github.com/jakebromberg/abuse-of-notation/"  target="_blank" rel="noopener">GitHub</a></p>
 </header>
 
 <!-- ================================================================ -->
@@ -82,7 +83,7 @@ assertEqual(N1.self, AddOne&lt;Zero&gt;.self)
 assertEqual(N2.self, AddOne&lt;AddOne&lt;Zero&gt;&gt;.self)
 assertEqual(N3.self, AddOne&lt;AddOne&lt;AddOne&lt;Zero&gt;&gt;&gt;.self)</code></pre>
   <div class="diagram-container">
-    <img src="/diagrams/peano-types.svg" alt="Peano type construction chain" loading="lazy">
+    <picture><source srcset="/diagrams/peano-types-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/peano-types.svg" alt="Peano type construction chain" loading="lazy"></picture>
     <p class="diagram-caption">Peano construction: each natural number is a unique nesting of AddOne around Zero.</p>
   </div>
   <div class="prose">
@@ -99,7 +100,7 @@ assertEqual(N3.self, AddOne&lt;AddOne&lt;AddOne&lt;Zero&gt;&gt;&gt;.self)</code>
     </div>
   </details>
   <div class="diagram-container">
-    <img src="/diagrams/protocol-hierarchy.svg" alt="Protocol hierarchy" loading="lazy">
+    <picture><source srcset="/diagrams/protocol-hierarchy-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/protocol-hierarchy.svg" alt="Protocol hierarchy" loading="lazy"></picture>
     <p class="diagram-caption">The Integer protocol hierarchy. Zero sits at the intersection of Natural and Nonpositive. Solid lines are unconditional conformances; dashed lines are conditional (requiring a <code>where</code> clause on the type parameter).</p>
   </div>
 </section>
@@ -127,7 +128,7 @@ assertEqual(TwoPlusThree.Total.self, N5.self)
 typealias ThreePlusTwo = PlusSucc&lt;PlusSucc&lt;PlusZero&lt;N3&gt;&gt;&gt;
 assertEqual(TwoPlusThree.Total.self, ThreePlusTwo.Total.self)</code></pre>
   <div class="diagram-container">
-    <img src="/diagrams/witness-chain.svg" alt="Witness chain for 2+3=5" loading="lazy">
+    <picture><source srcset="/diagrams/witness-chain-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/witness-chain.svg" alt="Witness chain for 2+3=5" loading="lazy"></picture>
     <p class="diagram-caption">Witness chain for 2 + 3 = 5. Each PlusSucc wrapping increments Right and Total by one.</p>
   </div>
   <details>
@@ -144,43 +145,45 @@ assertEqual(TwoPlusThree.Total.self, ThreePlusTwo.Total.self)</code></pre>
 <section class="tutorial-section" id="section-3">
   <h2>3. Continued fractions and pi</h2>
   <div class="prose">
-    <p>Two classical formulas approximate pi: <a href="https://en.wikipedia.org/wiki/Brouncker%27s_formula" target="_blank" rel="noopener">Brouncker's CF</a> for 4/pi and the <a href="https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80" target="_blank" rel="noopener">Leibniz series</a> for pi/4. At each depth, the <a href="https://en.wikipedia.org/wiki/Continued_fraction" target="_blank" rel="noopener">CF</a> convergent equals the reciprocal of a Leibniz partial sum. The macro is the proof <em>search</em>; the type checker is the proof <em>verifier</em>.</p>
+    <p>In <a href="#section-2">section 2</a>, we built witness chains by hand: <code>PlusSucc&lt;PlusSucc&lt;PlusZero&lt;N2&gt;&gt;&gt;</code> for 2 + 3 = 5. For simple arithmetic this is manageable, but proving that a continued fraction convergent equals a Leibniz partial sum requires witness chains dozens of types deep, with exact numerical values that must be computed first. We need something to do that computation and emit the right types.</p>
+    <p>A <a href="https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/" target="_blank" rel="noopener">Swift macro</a> is a compiler plugin that generates code at compile time. In this project, macros perform arbitrary integer arithmetic &mdash; the kind of computation the type system can't do &mdash; and emit witness type chains that the type system <em>can</em> verify. This division of labor is the key idea: the macro is the proof <em>search</em> (finding the right witness chain), and the type checker is the proof <em>verifier</em> (confirming that the chain satisfies every protocol constraint). The search is unchecked computation; the verification is structural and cannot be fooled.</p>
+    <p>Two classical formulas approximate pi: <a href="https://en.wikipedia.org/wiki/Brouncker%27s_formula" target="_blank" rel="noopener">Brouncker's CF</a> for 4/pi and the <a href="https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80" target="_blank" rel="noopener">Leibniz series</a> for pi/4. At each depth, the <a href="https://en.wikipedia.org/wiki/Continued_fraction" target="_blank" rel="noopener">CF</a> convergent equals the reciprocal of a Leibniz partial sum. Throughout this project, <code>.P</code> denotes the <strong>numerator</strong> and <code>.Q</code> the <strong>denominator</strong> of a type-level fraction.</p>
   </div>
   <div class="diagram-container">
-    <img src="/diagrams/macro-architecture.svg" alt="Three-layer macro architecture" loading="lazy">
+    <picture><source srcset="/diagrams/macro-architecture-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/macro-architecture.svg" alt="Three-layer macro architecture" loading="lazy"></picture>
     <p class="diagram-caption">The macro does arbitrary computation at compile time. The type checker structurally verifies each chain.</p>
   </div>
   <pre><code class="language-swift">@PiConvergenceProof(depth: 3)
-enum PiProof {}
+enum PiConvergenceProof {}
 
-assertEqual(PiProof._CF0.P.self, N1.self)    // h_0 = 1
-assertEqual(PiProof._CF1.P.self, N3.self)    // h_1 = 3
-assertEqual(PiProof._CF2.P.self, N15.self)   // h_2 = 15
-assertEqual(PiProof._CF3.P.self, N105.self)  // h_3 = 105
+assertEqual(PiConvergenceProof.Convergent0.P.self, N1.self)   // h_0 = 1
+assertEqual(PiConvergenceProof.Convergent1.P.self, N3.self)   // h_1 = 3
+assertEqual(PiConvergenceProof.Convergent2.P.self, N15.self)  // h_2 = 15
+assertEqual(PiConvergenceProof.Convergent3.P.self, N105.self) // h_3 = 105
 
-assertEqual(PiProof._LS2.P.self, N2.self)    // S_2 = 2/3
-assertEqual(PiProof._LS3.P.self, N13.self)   // S_3 = 13/15</code></pre>
+assertEqual(PiConvergenceProof.LeibnizSum2.P.self, N2.self)   // S_2 = 2/3
+assertEqual(PiConvergenceProof.LeibnizSum3.P.self, N13.self)  // S_3 = 13/15</code></pre>
 
   <h3>Macro expansion (depth: 1)</h3>
   <div class="macro-panel">
     <div class="macro-input">
       <div class="macro-label">Input</div>
 <pre><code><span data-group="pi-decl">@PiConvergenceProof(depth: 1)</span>
-<span data-group="pi-enum">enum PiProof {}</span></code></pre>
+<span data-group="pi-enum">enum PiConvergenceProof {}</span></code></pre>
     </div>
     <div class="macro-output">
       <div class="macro-label">Expanded</div>
-<pre><code><span data-group="pi-enum">enum PiProof {</span>
-  <span data-group="pi-cf">typealias _CF0 = GCFConv0&lt;N1&gt;</span>
-  typealias _CFS_H1 = PlusSucc&lt;PlusZero&lt;N2&gt;&gt;
-  typealias _CFS_K1 = PlusZero&lt;N2&gt;
-  <span data-group="pi-cf">typealias _CF1 = GCFConvStep&lt;_CF0, ...&gt;</span>
-  <span data-group="pi-ls">typealias _LS1 = LeibnizBase</span>
-  typealias _LSW2 = PlusSucc&lt;PlusZero&lt;N2&gt;&gt;
-  <span data-group="pi-ls">typealias _LS2 = LeibnizSub&lt;_LS1, ...&gt;</span>
-  <span data-group="pi-check">func _piCorrespondenceCheck() {
-      assertEqual(_CF1.P.self, _LS2.Q.self)
-      assertEqual(_CF1.Q.self, _LS2.P.self)
+<pre><code><span data-group="pi-enum">enum PiConvergenceProof {</span>
+  <span data-group="pi-cf">typealias Convergent0 = GCFConvergent0&lt;N1&gt;</span>
+  typealias ConvergentSumH1 = PlusSucc&lt;PlusZero&lt;N2&gt;&gt;
+  typealias ConvergentSumK1 = PlusZero&lt;N2&gt;
+  <span data-group="pi-cf">typealias Convergent1 = GCFConvergentStep&lt;Convergent0, ...&gt;</span>
+  <span data-group="pi-ls">typealias LeibnizSum1 = LeibnizBase</span>
+  typealias LeibnizWitness2 = PlusSucc&lt;PlusZero&lt;N2&gt;&gt;
+  <span data-group="pi-ls">typealias LeibnizSum2 = LeibnizSub&lt;LeibnizSum1, ...&gt;</span>
+  <span data-group="pi-check">func piCorrespondenceCheck() {
+      assertEqual(Convergent1.P.self, LeibnizSum2.Q.self)
+      assertEqual(Convergent1.Q.self, LeibnizSum2.P.self)
   }</span>
 <span data-group="pi-enum">}</span></code></pre>
     </div>
@@ -193,35 +196,40 @@ assertEqual(PiProof._LS3.P.self, N13.self)   // S_3 = 13/15</code></pre>
 <section class="tutorial-section" id="section-4">
   <h2>4. Wallis product</h2>
   <div class="prose">
-    <p>The <a href="https://en.wikipedia.org/wiki/Wallis_product" target="_blank" rel="noopener">Wallis product</a> for pi/2. The structural fingerprint: the numerator exceeds the denominator by 1 at each step &mdash; the <a href="https://en.wikipedia.org/wiki/Difference_of_two_squares" target="_blank" rel="noopener">difference-of-squares</a> identity <span class="math">(2k)&sup2; = (2k-1)(2k+1) + 1</span>.</p>
+    <p>The <a href="https://en.wikipedia.org/wiki/Wallis_product" target="_blank" rel="noopener">Wallis product</a> for pi/2. Each step multiplies the numerator by <span class="math">(2k)&sup2;</span> and the denominator by <span class="math">(2k-1)(2k+1)</span>. The structural fingerprint: the numerator exceeds the denominator by 1 at each step &mdash; the <a href="https://en.wikipedia.org/wiki/Difference_of_two_squares" target="_blank" rel="noopener">difference-of-squares</a> identity <span class="math">(2k)&sup2; = (2k-1)(2k+1) + 1</span>.</p>
+    <p><code>WallisStep</code> advances the partial product by one step. Its type parameters are multiplication witnesses for the four factors involved: the numerator is multiplied by <span class="math">2k</span> twice (squaring), while the denominator is multiplied by <span class="math">2k-1</span> then <span class="math">2k+1</span>. The macro supplies these witnesses using two universal theorems that are formally proved in <a href="#section-10">section 10</a>:</p>
+    <ul>
+      <li><code>N.OneTimesProof</code> &mdash; a witness that <span class="math">1 * N = N</span>, available on every natural number.</li>
+      <li><code>.Distributed</code> &mdash; given a proof that <span class="math">a * b = c</span>, produces a proof that <span class="math">(a+1) * b = c + b</span>. Chaining <code>.Distributed</code> repeatedly builds up the left operand: <code>N2.OneTimesProof</code> witnesses <span class="math">1 * 2 = 2</span>, then <code>.Distributed</code> produces <span class="math">2 * 2 = 4</span>, another <code>.Distributed</code> gives <span class="math">3 * 2 = 6</span>, and so on.</li>
+    </ul>
   </div>
   <pre><code class="language-swift">@WallisProductProof(depth: 2)
-enum WallisProof {}
+enum WallisProductProof {}
 
-assertEqual(WallisProof._W0.P.self, N1.self)  // W_0 = 1/1
-assertEqual(WallisProof._W1.P.self, N4.self)  // W_1 = 4/3
-assertEqual(WallisProof._W1.Q.self, N3.self)</code></pre>
+assertEqual(WallisProductProof.Wallis0.P.self, N1.self)  // W_0 = 1/1
+assertEqual(WallisProductProof.Wallis1.P.self, N4.self)  // W_1 = 4/3
+assertEqual(WallisProductProof.Wallis1.Q.self, N3.self)</code></pre>
 
   <h3>Macro expansion (depth: 1)</h3>
   <div class="macro-panel">
     <div class="macro-input">
       <div class="macro-label">Input</div>
 <pre><code><span data-group="w-decl">@WallisProductProof(depth: 1)</span>
-<span data-group="w-enum">enum WallisProof {}</span></code></pre>
+<span data-group="w-enum">enum WallisProductProof {}</span></code></pre>
     </div>
     <div class="macro-output">
       <div class="macro-label">Expanded</div>
-<pre><code><span data-group="w-enum">enum WallisProof {</span>
-  <span data-group="w-base">typealias _W0 = WallisBase</span>
-  <span data-group="w-step">typealias _W1 = WallisStep&lt;_W0,
+<pre><code><span data-group="w-enum">enum WallisProductProof {</span>
+  <span data-group="w-base">typealias Wallis0 = WallisBase</span>
+  <span data-group="w-step">typealias Wallis1 = WallisStep&lt;Wallis0,
       N2.OneTimesProof,
       N2.OneTimesProof.Distributed,
       N1.OneTimesProof,
       N3.OneTimesProof&gt;</span>
-  <span data-group="w-factor">typealias _WFC1 =
+  <span data-group="w-factor">typealias WallisFactor1 =
       PlusSucc&lt;PlusZero&lt;N3&gt;&gt;</span>
-  <span data-group="w-check">func _wallisFactorCheck() {
-      assertEqual(_WFC1.Total.self, N4.self)
+  <span data-group="w-check">func wallisFactorCheck() {
+      assertEqual(WallisFactor1.Total.self, N4.self)
   }</span>
 <span data-group="w-enum">}</span></code></pre>
     </div>
@@ -234,33 +242,34 @@ assertEqual(WallisProof._W1.Q.self, N3.self)</code></pre>
 <section class="tutorial-section" id="section-5">
   <h2>5. Fibonacci at the type level</h2>
   <div class="prose">
-    <p>The <a href="https://en.wikipedia.org/wiki/Fibonacci_sequence" target="_blank" rel="noopener">Fibonacci sequence</a> encoded as type-level state transitions. Each <code>FibStep</code> carries a <code>NaturalSum</code> witness proving the recurrence.</p>
+    <p>The <a href="https://en.wikipedia.org/wiki/Fibonacci_sequence" target="_blank" rel="noopener">Fibonacci sequence</a> encoded as type-level state transitions. Each state tracks three values: <code>.Prev</code>, <code>.Current</code>, and <code>.Next</code>. The library provides <code>Fibonacci0</code> as the base case: Prev = 1, Current = 0, Next = 1.</p>
+    <p><code>FibonacciStep&lt;S, W&gt;</code> advances the state by one position. It takes a previous state S and an addition witness W proving that S.Current + S.Next = W.Total &mdash; the Fibonacci recurrence. The new state shifts forward: <code>.Prev</code> becomes S.Current, <code>.Current</code> becomes S.Next, and <code>.Next</code> becomes W.Total. The witness W is the proof that the recurrence holds at this step.</p>
   </div>
   <pre><code class="language-swift">@FibonacciProof(upTo: 10)
-enum FibProof {}
+enum FibonacciProof {}
 
-assertEqual(Fib0.Current.self, N0.self)            // F(0) = 0
-assertEqual(FibProof._Fib1.Current.self, N1.self)  // F(1) = 1
-assertEqual(FibProof._Fib3.Current.self, N2.self)  // F(3) = 2
-assertEqual(FibProof._Fib5.Current.self, N5.self)  // F(5) = 5
-assertEqual(FibProof._Fib6.Current.self, N8.self)  // F(6) = 8</code></pre>
+assertEqual(Fibonacci0.Current.self, N0.self)                  // F(0) = 0
+assertEqual(FibonacciProof.Fibonacci1.Current.self, N1.self)   // F(1) = 1
+assertEqual(FibonacciProof.Fibonacci3.Current.self, N2.self)   // F(3) = 2
+assertEqual(FibonacciProof.Fibonacci5.Current.self, N5.self)   // F(5) = 5
+assertEqual(FibonacciProof.Fibonacci6.Current.self, N8.self)   // F(6) = 8</code></pre>
 
   <h3>Macro expansion (upTo: 3)</h3>
   <div class="macro-panel">
     <div class="macro-input">
       <div class="macro-label">Input</div>
 <pre><code><span data-group="fib-decl">@FibonacciProof(upTo: 3)</span>
-<span data-group="fib-enum">enum FibProof {}</span></code></pre>
+<span data-group="fib-enum">enum FibonacciProof {}</span></code></pre>
     </div>
     <div class="macro-output">
       <div class="macro-label">Expanded</div>
-<pre><code><span data-group="fib-enum">enum FibProof {</span>
-  <span data-group="fib-w1">typealias _FibW1 = PlusSucc&lt;PlusZero&lt;Zero&gt;&gt;</span>
-  <span data-group="fib-s1">typealias _Fib1 = FibStep&lt;Fib0, _FibW1&gt;</span>
-  <span data-group="fib-w2">typealias _FibW2 = PlusSucc&lt;PlusZero&lt;N1&gt;&gt;</span>
-  <span data-group="fib-s2">typealias _Fib2 = FibStep&lt;_Fib1, _FibW2&gt;</span>
-  <span data-group="fib-w3">typealias _FibW3 = PlusSucc&lt;PlusSucc&lt;PlusZero&lt;N1&gt;&gt;&gt;</span>
-  <span data-group="fib-s3">typealias _Fib3 = FibStep&lt;_Fib2, _FibW3&gt;</span>
+<pre><code><span data-group="fib-enum">enum FibonacciProof {</span>
+  <span data-group="fib-w1">typealias FibonacciWitness1 = PlusSucc&lt;PlusZero&lt;Zero&gt;&gt;</span>
+  <span data-group="fib-s1">typealias Fibonacci1 = FibonacciStep&lt;Fibonacci0, FibonacciWitness1&gt;</span>
+  <span data-group="fib-w2">typealias FibonacciWitness2 = PlusSucc&lt;PlusZero&lt;N1&gt;&gt;</span>
+  <span data-group="fib-s2">typealias Fibonacci2 = FibonacciStep&lt;Fibonacci1, FibonacciWitness2&gt;</span>
+  <span data-group="fib-w3">typealias FibonacciWitness3 = PlusSucc&lt;PlusSucc&lt;PlusZero&lt;N1&gt;&gt;&gt;</span>
+  <span data-group="fib-s3">typealias Fibonacci3 = FibonacciStep&lt;Fibonacci2, FibonacciWitness3&gt;</span>
 <span data-group="fib-enum">}</span></code></pre>
     </div>
   </div>
@@ -277,10 +286,10 @@ assertEqual(FibProof._Fib6.Current.self, N8.self)  // F(6) = 8</code></pre>
   <pre><code class="language-swift">@GoldenRatioProof(depth: 5)
 enum GoldenRatioProof {}
 
-assertEqual(GoldenRatioProof._CF0.P.self, N1.self)   // h_0 = F(2) = 1
-assertEqual(GoldenRatioProof._CF1.P.self, N2.self)   // h_1 = F(3) = 2
-assertEqual(GoldenRatioProof._CF3.P.self, N5.self)   // h_3 = F(5) = 5
-assertEqual(GoldenRatioProof._CF5.P.self, N13.self)  // h_5 = F(7) = 13</code></pre>
+assertEqual(GoldenRatioProof.Convergent0.P.self, N1.self)   // h_0 = F(2) = 1
+assertEqual(GoldenRatioProof.Convergent1.P.self, N2.self)   // h_1 = F(3) = 2
+assertEqual(GoldenRatioProof.Convergent3.P.self, N5.self)   // h_3 = F(5) = 5
+assertEqual(GoldenRatioProof.Convergent5.P.self, N13.self)  // h_5 = F(7) = 13</code></pre>
 
   <h3>Macro expansion (depth: 1)</h3>
   <div class="macro-panel">
@@ -293,15 +302,15 @@ assertEqual(GoldenRatioProof._CF5.P.self, N13.self)  // h_5 = F(7) = 13</code></
       <div class="macro-label">Expanded</div>
 <pre><code><span data-group="gr-enum">enum GoldenRatioProof {</span>
   <span data-group="gr-fib">// Fibonacci chain
-  typealias _Fib1 = FibStep&lt;Fib0, ...&gt;
-  typealias _Fib2 = FibStep&lt;_Fib1, ...&gt;
-  typealias _Fib3 = FibStep&lt;_Fib2, ...&gt;</span>
+  typealias Fibonacci1 = FibonacciStep&lt;Fibonacci0, ...&gt;
+  typealias Fibonacci2 = FibonacciStep&lt;Fibonacci1, ...&gt;
+  typealias Fibonacci3 = FibonacciStep&lt;Fibonacci2, ...&gt;</span>
   <span data-group="gr-cf">// CF convergents
-  typealias _CF0 = GCFConv0&lt;N1&gt;
-  typealias _CF1 = GCFConvStep&lt;_CF0, ...&gt;</span>
-  <span data-group="gr-check">func _goldenRatioCorrespondenceCheck() {
-      assertEqual(_CF0.P.self, _Fib2.Current.self)
-      assertEqual(_CF1.P.self, _Fib3.Current.self)
+  typealias Convergent0 = GCFConvergent0&lt;N1&gt;
+  typealias Convergent1 = GCFConvergentStep&lt;Convergent0, ...&gt;</span>
+  <span data-group="gr-check">func goldenRatioCorrespondenceCheck() {
+      assertEqual(Convergent0.P.self, Fibonacci2.Current.self)
+      assertEqual(Convergent1.P.self, Fibonacci3.Current.self)
   }</span>
 <span data-group="gr-enum">}</span></code></pre>
     </div>
@@ -317,12 +326,12 @@ assertEqual(GoldenRatioProof._CF5.P.self, N13.self)  // h_5 = F(7) = 13</code></
     <p>The CF for <a href="https://en.wikipedia.org/wiki/Square_root_of_2" target="_blank" rel="noopener">&radic;2</a> is <span class="math">[1; 2, 2, ...]</span>. The recurrence <span class="math">h<sub>n</sub> = 2h<sub>n-1</sub> + h<sub>n-2</sub></span> is equivalently left-multiplication by M = [[2,1],[1,0]]. The macro constructs both and proves they match.</p>
   </div>
   <pre><code class="language-swift">@Sqrt2ConvergenceProof(depth: 3)
-enum Sqrt2Proof {}
+enum Sqrt2ConvergenceProof {}
 
-assertEqual(Sqrt2Proof._CF1.P.self, N3.self)    // h_1 = 3
-assertEqual(Sqrt2Proof._CF2.P.self, N7.self)    // h_2 = 7
-assertEqual(Sqrt2Proof._CF3.P.self, N17.self)   // h_3 = 17
-assertEqual(Sqrt2Proof._MAT3.A.self, N17.self)  // matrix matches</code></pre>
+assertEqual(Sqrt2ConvergenceProof.Convergent1.P.self, N3.self)      // h_1 = 3
+assertEqual(Sqrt2ConvergenceProof.Convergent2.P.self, N7.self)      // h_2 = 7
+assertEqual(Sqrt2ConvergenceProof.Convergent3.P.self, N17.self)     // h_3 = 17
+assertEqual(Sqrt2ConvergenceProof.MatrixPower3.A.self, N17.self)    // matrix matches</code></pre>
 </section>
 
 <!-- ================================================================ -->
@@ -331,7 +340,9 @@ assertEqual(Sqrt2Proof._MAT3.A.self, N17.self)  // matrix matches</code></pre>
 <section class="tutorial-section" id="section-8">
   <h2>8. Universal addition theorems</h2>
   <div class="prose">
-    <p><strong>Universal theorems</strong> hold for <em>all</em> natural numbers via <a href="https://en.wikipedia.org/wiki/Structural_induction" target="_blank" rel="noopener">structural induction</a>: a base case on <code>Zero</code>/<code>PlusZero</code> and an inductive step on <code>AddOne</code>/<code>PlusSucc</code>.</p>
+    <p>Sections 3&ndash;7 proved specific numerical facts: <em>this</em> convergent equals <em>that</em> value. <strong>Universal theorems</strong> prove statements for <em>all</em> natural numbers at once, via <a href="https://en.wikipedia.org/wiki/Structural_induction" target="_blank" rel="noopener">structural induction</a>: a base case on <code>Zero</code>/<code>PlusZero</code> and an inductive step on <code>AddOne</code>/<code>PlusSucc</code>.</p>
+    <p>The generic functions below prove universality. When the compiler accepts <code>useLeftZero(N0.self)</code>, <code>useLeftZero(N5.self)</code>, and <code>useLeftZero(N9.self)</code>, it's not just checking three cases &mdash; the generic constraint <code>&lt;N: AddLeftZero&gt;</code> means it accepts <em>any</em> natural number. If there were a natural number that didn't satisfy the theorem, the conditional conformance chain would break and the generic call would fail to compile.</p>
+    <p>Each theorem defines an associated type that transforms one proof into another. <code>.Shifted</code> (Theorem 2) takes a proof that <span class="math">a + b = c</span> and produces a proof that <span class="math">S(a) + b = S(c)</span> &mdash; incrementing the left operand and the total. <code>.Commuted</code> (Theorem 3) takes a proof that <span class="math">a + b = c</span> and produces a proof that <span class="math">b + a = c</span> &mdash; swapping the operands. Commutativity is built from the first two theorems: to commute <code>PlusSucc&lt;P&gt;</code>, first commute the inner proof P, then shift the result.</p>
   </div>
   <h3>Theorem 1: 0 + n = n</h3>
   <pre><code class="language-swift">func useLeftZero&lt;N: AddLeftZero&gt;(_: N.Type) {}
@@ -369,7 +380,7 @@ extension PlusZero: AddCommutative where N: AddLeftZero {
     public typealias Commuted = N.ZeroPlusProof
 }
 extension PlusSucc: AddCommutative
-    where Proof: AddCommutative, Proof.Commuted: SuccLeftAdd {
+    where Proof: AddCommutative, Proof.Commuted: SuccessorLeftAdd {
     public typealias Commuted = Proof.Commuted.Shifted
 }</code></pre>
     </div>
@@ -387,19 +398,19 @@ extension PlusSucc: AddCommutative
     <p>This pattern recurs: <code>ProductSeed</code> (<a href="#section-12">section 12</a>) wraps a <code>NaturalProduct</code> proof for distributivity. Any time you need induction over two parameters, you can wrap one as a seed and induct over the other.</p>
   </div>
   <div class="diagram-container">
-    <img src="/diagrams/seed-wrapping.svg" alt="ProofSeed induction pattern" loading="lazy">
+    <picture><source srcset="/diagrams/seed-wrapping-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/seed-wrapping.svg" alt="ProofSeed induction pattern" loading="lazy"></picture>
     <p class="diagram-caption">Wrap one proof as a seed, build AddOne layers for the second parameter.</p>
   </div>
   <pre><code class="language-swift">// (3 + 2) + 4 = 3 + (2 + 4) = 9
-typealias Assoc3p2p4 = AddOne&lt;AddOne&lt;AddOne&lt;AddOne&lt;
+typealias Associative3Plus2Plus4 = AddOne&lt;AddOne&lt;AddOne&lt;AddOne&lt;
     ProofSeed&lt;ThreePlusTwo&gt;&gt;&gt;&gt;&gt;
-assertEqual(Assoc3p2p4.AssocProof.Left.self, N3.self)
-assertEqual(Assoc3p2p4.AssocProof.Right.self, N6.self)
-assertEqual(Assoc3p2p4.AssocProof.Total.self, N9.self)
+assertEqual(Associative3Plus2Plus4.AssociativeProof.Left.self, N3.self)
+assertEqual(Associative3Plus2Plus4.AssociativeProof.Right.self, N6.self)
+assertEqual(Associative3Plus2Plus4.AssociativeProof.Total.self, N9.self)
 
 typealias FivePlusFour = PlusSucc&lt;PlusSucc&lt;PlusSucc&lt;PlusSucc&lt;
     PlusZero&lt;N5&gt;&gt;&gt;&gt;&gt;
-assertEqual(Assoc3p2p4.AssocProof.Total.self,
+assertEqual(Associative3Plus2Plus4.AssociativeProof.Total.self,
             FivePlusFour.Total.self)</code></pre>
 
   <details>
@@ -410,13 +421,13 @@ assertEqual(Assoc3p2p4.AssocProof.Total.self,
     public typealias Predecessor = SubOne&lt;Zero&gt;
 }
 public protocol AddAssociative: Natural {
-    associatedtype AssocProof: NaturalSum
+    associatedtype AssociativeProof: NaturalSum
 }
 extension ProofSeed: AddAssociative {
-    public typealias AssocProof = P
+    public typealias AssociativeProof = P
 }
 extension AddOne: AddAssociative where Predecessor: AddAssociative {
-    public typealias AssocProof = PlusSucc&lt;Predecessor.AssocProof&gt;
+    public typealias AssociativeProof = PlusSucc&lt;Predecessor.AssociativeProof&gt;
 }</code></pre>
     </div>
   </details>
@@ -428,50 +439,52 @@ extension AddOne: AddAssociative where Predecessor: AddAssociative {
 <section class="tutorial-section" id="section-10">
   <h2>10. Universal multiplication theorems</h2>
   <div class="prose">
-    <p>The flat encoding (<code>TimesTick</code>/<code>TimesGroup</code>) decomposes multiplication into where-clause-free primitives, enabling universal theorems.</p>
+    <p>The flat encoding (<code>TimesTick</code>/<code>TimesGroup</code>) decomposes multiplication into where-clause-free primitives, enabling universal theorems. To prove <span class="math">a * b</span>, you build <em>b groups of a ticks each</em>. <code>TimesTick</code> adds 1 to Total (one step within a copy of the left operand). <code>TimesGroup</code> adds 1 to Right without changing Total (marking that one complete copy has been accumulated). After a ticks followed by a group boundary, one copy of <span class="math">a</span> has been added; repeating <span class="math">b</span> times gives <span class="math">a * b</span>.</p>
+    <p>Commutativity pairs two proofs of the same product. <code>ForwardProof</code> directly constructs <span class="math">A * b</span> with a hardcoded number of ticks per group (e.g., 2 ticks per group for <code>MultiplicationCommutativityOfTwo</code>). <code>ReverseProof</code> builds <span class="math">b * A</span> by chaining <code>.Distributed</code> from <span class="math">0 * A = 0</span> upward &mdash; each <code>.Distributed</code> step adds one more to the left operand. A seed type (e.g., <code>MultiplicationCommutativityOfTwoSeed</code>) provides the base case at <span class="math">b = 0</span>, and <code>AddOne</code> layers extend the proof to <span class="math">b = 1, 2, 3, ...</span></p>
   </div>
   <div class="diagram-container">
-    <img src="/diagrams/flat-vs-composed.svg" alt="Flat vs composed multiplication" loading="lazy">
+    <picture><source srcset="/diagrams/flat-vs-composed-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/flat-vs-composed.svg" alt="Flat vs composed multiplication" loading="lazy"></picture>
     <p class="diagram-caption">Flat encoding avoids where clauses that trigger rewrite system explosion.</p>
   </div>
   <pre><code class="language-swift">// 2 * 3 = 6: three groups of two ticks
-typealias FlatMul2x0 = TimesZero&lt;N2&gt;
-typealias FlatMul2x1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatMul2x0&gt;&gt;&gt;
-typealias FlatMul2x2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatMul2x1&gt;&gt;&gt;
-typealias FlatMul2x3 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatMul2x2&gt;&gt;&gt;
-assertEqual(FlatMul2x3.Total.self, N6.self)
+typealias FlatProduct2Times0 = TimesZero&lt;N2&gt;
+typealias FlatProduct2Times1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatProduct2Times0&gt;&gt;&gt;
+typealias FlatProduct2Times2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatProduct2Times1&gt;&gt;&gt;
+typealias FlatProduct2Times3 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;FlatProduct2Times2&gt;&gt;&gt;
+assertEqual(FlatProduct2Times3.Total.self, N6.self)
 
-// SuccLeftMul: 2*3=6 =&gt; 3*3=9
-assertEqual(FlatMul2x3.Distributed.Total.self, N9.self)
+// SuccessorLeftMultiplication: 2*3=6 =&gt; 3*3=9
+assertEqual(FlatProduct2Times3.Distributed.Total.self, N9.self)
 
 // Commutativity: 2*3 = 3*2 = 6
-typealias MulComm2x3 = AddOne&lt;AddOne&lt;AddOne&lt;_MulCommN2Seed&gt;&gt;&gt;
-assertEqual(MulComm2x3.FwdProof.Total.self,
-            MulComm2x3.RevProof.Total.self)
+typealias MultiplicationCommutativity2Times3 =
+    AddOne&lt;AddOne&lt;AddOne&lt;MultiplicationCommutativityOfTwoSeed&gt;&gt;&gt;
+assertEqual(MultiplicationCommutativity2Times3.ForwardProof.Total.self,
+            MultiplicationCommutativity2Times3.ReverseProof.Total.self)
 
-@MulCommProof(leftOperand: 4, depth: 5)
-enum MulComm4 {}
-assertEqual(MulComm4._Fwd3.Total.self, N12.self) // 4*3=12</code></pre>
+@MultiplicationCommutativityProof(leftOperand: 4, depth: 5)
+enum MultiplicationCommutativity4 {}
+assertEqual(MultiplicationCommutativity4.Forward3.Total.self, N12.self)</code></pre>
 
   <h3>Macro expansion (leftOperand: 2, depth: 2)</h3>
   <div class="macro-panel">
     <div class="macro-input">
       <div class="macro-label">Input</div>
-<pre><code><span data-group="mc-decl">@MulCommProof(leftOperand: 2,
-              depth: 2)</span>
-<span data-group="mc-enum">enum MulComm2 {}</span></code></pre>
+<pre><code><span data-group="mc-decl">@MultiplicationCommutativityProof(
+    leftOperand: 2, depth: 2)</span>
+<span data-group="mc-enum">enum MultiplicationCommutativity2 {}</span></code></pre>
     </div>
     <div class="macro-output">
       <div class="macro-label">Expanded</div>
-<pre><code><span data-group="mc-enum">enum MulComm2 {</span>
+<pre><code><span data-group="mc-enum">enum MultiplicationCommutativity2 {</span>
   <span data-group="mc-fwd">// Forward: 2 * b (flat encoding)
-  typealias _Fwd0 = TimesZero&lt;N2&gt;
-  typealias _Fwd1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;_Fwd0&gt;&gt;&gt;
-  typealias _Fwd2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;_Fwd1&gt;&gt;&gt;</span>
-  <span data-group="mc-rev">// Reverse: b * 2 (via SuccLeftMul)
-  typealias _Rev0 = N2.ZeroTimesProof
-  typealias _Rev1 = _Rev0.Distributed
-  typealias _Rev2 = _Rev1.Distributed</span>
+  typealias Forward0 = TimesZero&lt;N2&gt;
+  typealias Forward1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;Forward0&gt;&gt;&gt;
+  typealias Forward2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;Forward1&gt;&gt;&gt;</span>
+  <span data-group="mc-rev">// Reverse: b * 2 (via SuccessorLeftMultiplication)
+  typealias Reverse0 = N2.ZeroTimesProof
+  typealias Reverse1 = Reverse0.Distributed
+  typealias Reverse2 = Reverse1.Distributed</span>
 <span data-group="mc-enum">}</span></code></pre>
     </div>
   </div>
@@ -489,8 +502,8 @@ public struct TimesGroup&lt;Proof: NaturalProduct&gt;: NaturalProduct {
     public typealias Right = AddOne&lt;Proof.Right&gt;
     public typealias Total = Proof.Total
 }
-public protocol SuccLeftMul: NaturalProduct {
-    associatedtype Distributed: NaturalProduct &amp;#x26; SuccLeftMul
+public protocol SuccessorLeftMultiplication: NaturalProduct {
+    associatedtype Distributed: NaturalProduct &amp;#x26; SuccessorLeftMultiplication
 }</code></pre>
     </div>
   </details>
@@ -507,7 +520,7 @@ public protocol SuccLeftMul: NaturalProduct {
     <p>The stream coefficients match the values used by the macro-generated convergent proofs. For the golden ratio, <code>PhiCF.Head = N1</code> matches the all-ones CF used in <a href="#section-6">section 6</a>. For &radic;2, <code>Sqrt2CF</code> encodes [1; 2, 2, ...], the same CF computed by <a href="#section-7">section 7</a>. The streams encode the <em>identity</em> of the number; the convergent proofs compute its <em>approximations</em>.</p>
   </div>
   <div class="diagram-container">
-    <img src="/diagrams/coinductive-stream.svg" alt="Coinductive streams" loading="lazy">
+    <picture><source srcset="/diagrams/coinductive-stream-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/coinductive-stream.svg" alt="Coinductive streams" loading="lazy"></picture>
     <p class="diagram-caption">PhiCF is self-referential. Sqrt2CF enters the Sqrt2Periodic loop.</p>
   </div>
   <pre><code class="language-swift">assertEqual(PhiCF.Head.self, N1.self)
@@ -531,47 +544,53 @@ assertStreamEqual(AddOne&lt;AddOne&lt;PhiUnfoldSeed&gt;&gt;.Unfolded.self,
 <section class="tutorial-section" id="section-12">
   <h2>12. <a href="https://en.wikipedia.org/wiki/Distributive_property" target="_blank" rel="noopener">Distributivity</a></h2>
   <div class="prose">
-    <p><span class="math">a * (b + c) = a*b + a*c</span> bridges sum and product witnesses. <code>ProductSeed&lt;Q&gt;</code> wraps an existing product proof; <code>MulDistributive</code> tracks a sum witness through the product proof.</p>
+    <p><span class="math">a * (b + c) = a*b + a*c</span> bridges sum and product witnesses. The product proof for <span class="math">a * (b + c)</span> is built as c groups of a ticks on top of <code>ProductSeed&lt;Q&gt;</code>, where Q witnesses <span class="math">a * b</span>. A <code>DistributiveSum</code> witness rides along inside the product proof, tracking the sum <span class="math">a*b + a*c</span> as it accumulates:</p>
+    <ul>
+      <li><code>ProductSeed&lt;Q&gt;</code> starts with <code>PlusZero&lt;Q.Total&gt;</code> &mdash; the sum begins at <span class="math">a*b + 0</span> (no a*c contribution yet).</li>
+      <li>Each <code>TimesTick</code> wraps the sum in <code>PlusSucc</code> &mdash; adding 1 to the right side (the a*c portion grows by 1).</li>
+      <li>Each <code>TimesGroup</code> passes the sum through unchanged &mdash; group boundaries don't affect the running total.</li>
+    </ul>
+    <p>After c groups of a ticks, the right side of the sum has accumulated <span class="math">a*c</span>, so <code>DistributiveSum</code> witnesses <span class="math">a*b + a*c = a*(b+c)</span>.</p>
   </div>
   <div class="diagram-container">
-    <img src="/diagrams/distributivity-tracking.svg" alt="DistrSum tracked through product proof" loading="lazy">
-    <p class="diagram-caption">DistrSum (orange) tracked through the product proof (blue).</p>
+    <picture><source srcset="/diagrams/distributivity-tracking-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/distributivity-tracking.svg" alt="DistrSum tracked through product proof" loading="lazy"></picture>
+    <p class="diagram-caption">DistributiveSum (orange) tracked through the product proof (blue).</p>
   </div>
   <pre><code class="language-swift">// 2 * (1 + 1) = 2*1 + 2*1 = 4
-typealias Distr2x1p1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;
-    ProductSeed&lt;FlatMul2x1&gt;&gt;&gt;&gt;
-assertEqual(Distr2x1p1.DistrSum.Left.self, N2.self)   // a*b = 2
-assertEqual(Distr2x1p1.DistrSum.Right.self, N2.self)  // a*c = 2
-assertEqual(Distr2x1p1.DistrSum.Total.self, N4.self)  // 2+2 = 4
+typealias Distributive2Times1Plus1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;
+    ProductSeed&lt;FlatProduct2Times1&gt;&gt;&gt;&gt;
+assertEqual(Distributive2Times1Plus1.DistributiveSum.Left.self, N2.self)   // a*b = 2
+assertEqual(Distributive2Times1Plus1.DistributiveSum.Right.self, N2.self)  // a*c = 2
+assertEqual(Distributive2Times1Plus1.DistributiveSum.Total.self, N4.self)  // 2+2 = 4
 
 // 3 * (2 + 1) = 3*2 + 3*1 = 9
-typealias FlatMul3x2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;TimesTick&lt;
+typealias FlatProduct3Times2 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;TimesTick&lt;
     TimesGroup&lt;TimesTick&lt;TimesTick&lt;TimesTick&lt;TimesZero&lt;N3&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
-typealias Distr3x2p1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;TimesTick&lt;
-    ProductSeed&lt;FlatMul3x2&gt;&gt;&gt;&gt;&gt;
-assertEqual(Distr3x2p1.DistrSum.Left.self, N6.self)   // 3*2
-assertEqual(Distr3x2p1.DistrSum.Right.self, N3.self)  // 3*1
-assertEqual(Distr3x2p1.DistrSum.Total.self, N9.self)  // 6+3</code></pre>
+typealias Distributive3Times2Plus1 = TimesGroup&lt;TimesTick&lt;TimesTick&lt;TimesTick&lt;
+    ProductSeed&lt;FlatProduct3Times2&gt;&gt;&gt;&gt;&gt;
+assertEqual(Distributive3Times2Plus1.DistributiveSum.Left.self, N6.self)   // 3*2
+assertEqual(Distributive3Times2Plus1.DistributiveSum.Right.self, N3.self)  // 3*1
+assertEqual(Distributive3Times2Plus1.DistributiveSum.Total.self, N9.self)  // 6+3</code></pre>
 
   <details>
-    <summary>ProductSeed and MulDistributive definitions</summary>
+    <summary>ProductSeed and MultiplicationDistributive definitions</summary>
     <div class="details-content">
       <pre><code class="language-swift">public enum ProductSeed&lt;Q: NaturalProduct&gt;: NaturalProduct {
     public typealias Left = Q.Left
     public typealias Right = Q.Right
     public typealias Total = Q.Total
 }
-public protocol MulDistributive: NaturalProduct {
-    associatedtype DistrSum: NaturalSum
+public protocol MultiplicationDistributive: NaturalProduct {
+    associatedtype DistributiveSum: NaturalSum
 }
-extension ProductSeed: MulDistributive {
-    public typealias DistrSum = PlusZero&lt;Q.Total&gt;
+extension ProductSeed: MultiplicationDistributive {
+    public typealias DistributiveSum = PlusZero&lt;Q.Total&gt;
 }
-extension TimesTick: MulDistributive where Proof: MulDistributive {
-    public typealias DistrSum = PlusSucc&lt;Proof.DistrSum&gt;
+extension TimesTick: MultiplicationDistributive where Proof: MultiplicationDistributive {
+    public typealias DistributiveSum = PlusSucc&lt;Proof.DistributiveSum&gt;
 }
-extension TimesGroup: MulDistributive where Proof: MulDistributive {
-    public typealias DistrSum = Proof.DistrSum
+extension TimesGroup: MultiplicationDistributive where Proof: MultiplicationDistributive {
+    public typealias DistributiveSum = Proof.DistributiveSum
 }</code></pre>
     </div>
   </details>
@@ -583,18 +602,26 @@ extension TimesGroup: MulDistributive where Proof: MulDistributive {
 <section class="tutorial-section" id="section-13">
   <h2>13. Number-theoretic identities</h2>
   <div class="prose">
-    <p>Distributivity and <code>SuccLeftMul</code> explain <em>why</em> identities hold.</p>
+    <p>Distributivity and <code>SuccessorLeftMultiplication</code> explain <em>why</em> identities hold, not just <em>that</em> they hold. Both sides of each identity decompose via a shared base product, and the tools from sections <a href="#section-10">10</a> and <a href="#section-12">12</a> provide the witnesses.</p>
   </div>
   <h3><a href="https://en.wikipedia.org/wiki/Difference_of_two_squares" target="_blank" rel="noopener">Difference of squares</a>: n(n+2) + 1 = (n+1)&sup2;</h3>
+  <div class="prose">
+    <p>Both sides share the base product <span class="math">n*(n+1)</span>. The right side is <span class="math">(n+1)&sup2; = n*(n+1) + (n+1)</span> via <code>SuccessorLeftMultiplication</code>. The left side is <span class="math">n*(n+2) = n*((n+1)+1) = n*(n+1) + n</span> via distributivity. The remainders differ by exactly 1.</p>
+    <p><code>FlatProduct1Times2</code> witnesses <span class="math">1 * 2 = 2</span> (the shared base for n=1). Applying <code>.Distributed</code> gives <span class="math">2 * 2 = 4</span>. The left side <code>DifferenceOfSquares1</code> witnesses <span class="math">3 + 1 = 4</span> via <code>PlusSucc&lt;PlusZero&lt;N3&gt;&gt;</code>, and the type checker confirms both totals are 4.</p>
+  </div>
   <pre><code class="language-swift">// n=1: 1*3 + 1 = 4 = 2^2
-typealias DiffSq1 = PlusSucc&lt;PlusZero&lt;N3&gt;&gt;
-assertEqual(DiffSq1.Total.self,
-            FlatMul1x2.Distributed.Total.self)</code></pre>
+typealias DifferenceOfSquares1 = PlusSucc&lt;PlusZero&lt;N3&gt;&gt;
+assertEqual(DifferenceOfSquares1.Total.self,
+            FlatProduct1Times2.Distributed.Total.self)</code></pre>
 
   <h3><a href="https://en.wikipedia.org/wiki/Cassini_and_Catalan_identities" target="_blank" rel="noopener">Cassini identity</a>: F(n-1)F(n+1) - F(n)&sup2; = (-1)<sup>n</sup></h3>
+  <div class="prose">
+    <p>The key step uses distributivity: <span class="math">F(n+1)*F(n-1) = (F(n)+F(n-1))*F(n-1) = F(n)*F(n-1) + F(n-1)&sup2;</span>. This relates the cross-product at step n to the square and cross-product at step n-1. At n=4: F(3)=2, F(4)=3, F(5)=5, so <span class="math">F(3)*F(5) = 2*5 = 10</span> and <span class="math">F(4)&sup2; + 1 = 9 + 1 = 10</span>.</p>
+    <p><code>FlatProduct2Times5</code> witnesses <span class="math">2 * 5 = 10</span> (built by extending <code>FlatProduct2Times3</code> from <a href="#section-10">section 10</a> with two more groups). <code>CassiniIdentity4</code> witnesses <span class="math">9 + 1 = 10</span> via <code>PlusSucc&lt;PlusZero&lt;N9&gt;&gt;</code>.</p>
+  </div>
   <pre><code class="language-swift">// n=4: F(3)*F(5) = F(4)^2 + 1 =&gt; 2*5 = 9+1 = 10
-typealias Cassini4 = PlusSucc&lt;PlusZero&lt;N9&gt;&gt;
-assertEqual(Cassini4.Total.self, FlatMul2x5.Total.self)</code></pre>
+typealias CassiniIdentity4 = PlusSucc&lt;PlusZero&lt;N9&gt;&gt;
+assertEqual(CassiniIdentity4.Total.self, FlatProduct2Times5.Total.self)</code></pre>
 </section>
 
 <!-- ================================================================ -->
@@ -603,14 +630,17 @@ assertEqual(Cassini4.Total.self, FlatMul2x5.Total.self)</code></pre>
 <section class="tutorial-section" id="section-14">
   <h2>14. Convergent determinant identity</h2>
   <div class="prose">
-    <p>The <a href="https://en.wikipedia.org/wiki/Continuant_(mathematics)" target="_blank" rel="noopener">convergent determinant</a> <span class="math">h<sub>n</sub>k<sub>n-1</sub> - h<sub>n-1</sub>k<sub>n</sub> = (-1)<sup>n+1</sup></span> connects CF matrices to number theory. For the golden ratio, this reduces to <a href="#section-13">Cassini</a>.</p>
+    <p>The <a href="https://en.wikipedia.org/wiki/Continuant_(mathematics)" target="_blank" rel="noopener">convergent determinant</a> <span class="math">h<sub>n</sub>k<sub>n-1</sub> - h<sub>n-1</sub>k<sub>n</sub> = (-1)<sup>n+1</sup></span> connects CF matrices to number theory. For the golden ratio, this reduces to <a href="#section-13">Cassini</a>. For &radic;2, with convergents h<sub>0</sub>/k<sub>0</sub> = 1/1, h<sub>1</sub>/k<sub>1</sub> = 3/2, h<sub>2</sub>/k<sub>2</sub> = 7/5:</p>
+    <p>The products are built by chaining <code>.Distributed</code> from <code>OneTimesProof</code>. Each <code>.Distributed</code> increments the left operand by one: <code>N1.OneTimesProof</code> witnesses <span class="math">1 * 1 = 1</span>, the first <code>.Distributed</code> gives <span class="math">2 * 1 = 2</span>, and the second gives <span class="math">3 * 1 = 3</span>. Similarly, <code>N5.OneTimesProof.Distributed.Distributed</code> builds <span class="math">1 * 5 = 5 &rarr; 2 * 5 = 10 &rarr; 3 * 5 = 15</span>.</p>
   </div>
-  <pre><code class="language-swift">// n=1: 3*1 = 1*2 + 1 =&gt; 3 = 3
+  <pre><code class="language-swift">// n=1: h_1*k_0 = h_0*k_1 + 1 =&gt; 3*1 = 1*2 + 1 =&gt; 3 = 3
+// N1.OneTimesProof: 1*1=1, .Distributed: 2*1=2, .Distributed: 3*1=3
 typealias Sqrt2Det_3x1 = N1.OneTimesProof.Distributed.Distributed
 typealias Sqrt2DetWit1 = PlusSucc&lt;PlusZero&lt;N2&gt;&gt;
 assertEqual(Sqrt2DetWit1.Total.self, Sqrt2Det_3x1.Total.self)
 
-// n=2: 3*5 = 7*2 + 1 =&gt; 15 = 15
+// n=2: h_1*k_2 = h_2*k_1 + 1 =&gt; 3*5 = 7*2 + 1 =&gt; 15 = 15
+// N5.OneTimesProof: 1*5=5, .Distributed: 2*5=10, .Distributed: 3*5=15
 typealias Sqrt2Det_3x5 = N5.OneTimesProof.Distributed.Distributed
 typealias Sqrt2DetWit2 = PlusSucc&lt;PlusZero&lt;AddOne&lt;N13&gt;&gt;&gt;
 assertEqual(Sqrt2DetWit2.Total.self, Sqrt2Det_3x5.Total.self)</code></pre>
@@ -628,31 +658,39 @@ assertEqual(Sqrt2DetWit2.Total.self, Sqrt2Det_3x5.Total.self)</code></pre>
     <p><strong>Brouncker&ndash;Wallis</strong> (derived): combining the two, <span class="math">WQ[k] = CF<sub>k</sub>.P * CF<sub>k-1</sub>.P</span>. Each Wallis denominator is the product of two consecutive CF numerators. This closes the triangle.</p>
   </div>
   <pre><code class="language-swift">// k=1: WQ[1] = 3*1 = 3
-typealias WallisLeibniz_3x1 = N3.TimesOneProof
-assertEqual(WallisLeibniz_3x1.Total.self, WallisProof._W1.Q.self)
+typealias WallisLeibniz3Times1 = N3.TimesOneProof
+assertEqual(WallisLeibniz3Times1.Total.self,
+            WallisProductProof.Wallis1.Q.self)
 
 // k=2: WQ[2] = 15*3 = 45
-typealias WL_1x3 = N3.OneTimesProof
-typealias WL_15x3 = WL_1x3.Distributed.Distributed.Distributed
-    .Distributed.Distributed.Distributed.Distributed.Distributed
-    .Distributed.Distributed.Distributed.Distributed.Distributed
-    .Distributed
-assertEqual(WL_15x3.Total.self, WallisProof._W2.Q.self)  // 45</code></pre>
+typealias WallisLeibniz1Times3 = N3.OneTimesProof
+typealias WallisLeibniz15Times3 = WallisLeibniz1Times3
+    .Distributed.Distributed.Distributed.Distributed
+    .Distributed.Distributed.Distributed.Distributed
+    .Distributed.Distributed.Distributed.Distributed
+    .Distributed.Distributed
+assertEqual(WallisLeibniz15Times3.Total.self,
+            WallisProductProof.Wallis2.Q.self)  // 45</code></pre>
 
   <h3>Three-way connection</h3>
   <div class="diagram-container">
-    <img src="/diagrams/three-way-pi.svg" alt="Three-way pi connection" loading="lazy">
+    <picture><source srcset="/diagrams/three-way-pi-dark.svg" media="(prefers-color-scheme: dark)"><img src="/diagrams/three-way-pi.svg" alt="Three-way pi connection" loading="lazy"></picture>
     <p class="diagram-caption">Three representations of pi, connected by type-level proofs.</p>
   </div>
-  <pre><code class="language-swift">// Brouncker-Leibniz: CF_k.P = LS_{k+1}.Q
-assertEqual(PiProof._CF1.P.self, PiProof._LS2.Q.self)    // 3 = 3
-assertEqual(PiProof._CF0.P.self, PiProof._LS1.Q.self)    // 1 = 1
-assertEqual(PiProof._CF2.P.self, PiProof._LS3.Q.self)    // 15 = 15
+  <pre><code class="language-swift">// Brouncker-Leibniz: Convergent_k.P = LeibnizSum_{k+1}.Q
+assertEqual(PiConvergenceProof.Convergent1.P.self,
+            PiConvergenceProof.LeibnizSum2.Q.self)    // 3 = 3
+assertEqual(PiConvergenceProof.Convergent0.P.self,
+            PiConvergenceProof.LeibnizSum1.Q.self)    // 1 = 1
+assertEqual(PiConvergenceProof.Convergent2.P.self,
+            PiConvergenceProof.LeibnizSum3.Q.self)    // 15 = 15
 
 // Brouncker-Wallis (derived): WQ[k] = CF_k.P * CF_{k-1}.P
-// At k=1: WQ[1] = CF_1.P * CF_0.P = 3 * 1 = 3
-assertEqual(WallisLeibniz_3x1.Left.self, PiProof._CF1.P.self)
-assertEqual(WallisLeibniz_3x1.Right.self, PiProof._CF0.P.self)</code></pre>
+// At k=1: WQ[1] = Convergent1.P * Convergent0.P = 3 * 1 = 3
+assertEqual(WallisLeibniz3Times1.Left.self,
+            PiConvergenceProof.Convergent1.P.self)
+assertEqual(WallisLeibniz3Times1.Right.self,
+            PiConvergenceProof.Convergent0.P.self)</code></pre>
 </section>
 
 <!-- ================================================================ -->
