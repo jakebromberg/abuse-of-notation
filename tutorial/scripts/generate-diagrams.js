@@ -18,7 +18,7 @@
 //   --theme <int>          diagram theme ID (default: 0)
 
 import { execSync } from 'child_process';
-import { readdirSync, mkdirSync } from 'fs';
+import { readdirSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseArgs } from 'util';
@@ -35,6 +35,7 @@ const { values: opts } = parseArgs({
     'self-loop':     { type: 'string' },
     'pad':           { type: 'string', default: '20' },
     'theme':         { type: 'string', default: '0' },
+    'dark-theme':    { type: 'string', default: '200' },
   },
   strict: false,
 });
@@ -51,14 +52,50 @@ mkdirSync(outputDir, { recursive: true });
 
 const files = readdirSync(diagramsDir).filter(f => f.endsWith('.d2'));
 
+// Light-mode fills → dark-mode equivalents (preserving semantic color relationships).
+const darkFillMap = {
+  '#cce5ff': '#1a3a5c',  // light blue → dark blue
+  '#e1f5ff': '#1a3550',  // very light blue → dark blue variant
+  '#d4edda': '#1a3a2a',  // light green → dark green
+  '#fff3cd': '#3d3520',  // light yellow → dark amber
+  '#e2e3e5': '#3a3a3c',  // light gray → dark gray
+  '#f8d7da': '#4a2028',  // light pink → dark red
+};
+
+function stripBackground(filePath) {
+  let svg = readFileSync(filePath, 'utf-8');
+  svg = svg.replace(/<rect[^>]*class="\s*fill-N7\s*"[^>]*\/>/g, '');
+  writeFileSync(filePath, svg);
+}
+
+function swapFillsForDark(filePath) {
+  let svg = readFileSync(filePath, 'utf-8');
+  for (const [light, dark] of Object.entries(darkFillMap)) {
+    svg = svg.replaceAll(light, dark);
+  }
+  writeFileSync(filePath, svg);
+}
+
 for (const file of files) {
   const name = basename(file, extname(file));
   const input = resolve(diagramsDir, file);
-  const output = resolve(outputDir, `${name}.svg`);
-  console.log(`Generating ${name}.svg...`);
-  execSync(`d2 --layout=elk --theme=${opts['theme']} ${elkFlags} "${input}" "${output}"`, {
+
+  // Light theme
+  const lightOutput = resolve(outputDir, `${name}.svg`);
+  console.log(`Generating ${name}.svg (light)...`);
+  execSync(`d2 --layout=elk --theme=${opts['theme']} ${elkFlags} "${input}" "${lightOutput}"`, {
     stdio: 'inherit',
   });
+  stripBackground(lightOutput);
+
+  // Dark theme
+  const darkOutput = resolve(outputDir, `${name}-dark.svg`);
+  console.log(`Generating ${name}-dark.svg (dark)...`);
+  execSync(`d2 --layout=elk --theme=${opts['dark-theme']} ${elkFlags} "${input}" "${darkOutput}"`, {
+    stdio: 'inherit',
+  });
+  stripBackground(darkOutput);
+  swapFillsForDark(darkOutput);
 }
 
-console.log(`Generated ${files.length} diagram(s) in ${outputDir}`);
+console.log(`Generated ${files.length * 2} diagram(s) in ${outputDir}`);

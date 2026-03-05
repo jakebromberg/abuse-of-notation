@@ -19,7 +19,7 @@ function shikiPlugin() {
     transformIndexHtml(html) {
       if (!highlighter) return html;
 
-      // Pass 1: language-swift blocks (dark theme)
+      // Pass 1: language-swift blocks (dual theme)
       html = html.replace(
         /<pre><code class="language-swift">([\s\S]*?)<\/code><\/pre>/g,
         (_, code) => {
@@ -32,7 +32,8 @@ function shikiPlugin() {
 
           return highlighter.codeToHtml(raw.trim(), {
             lang: 'swift',
-            theme: 'catppuccin-mocha',
+            themes: { light: 'catppuccin-latte', dark: 'catppuccin-mocha' },
+            defaultColor: false,
           });
         }
       );
